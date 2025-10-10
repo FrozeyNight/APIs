@@ -26,7 +26,10 @@ int main(){
         response = curl_easy_perform(curl);
 
         if(response == CURLE_OK){
-            std::cout << "Response: " << readBuffer << "\n";
+            readBuffer.erase(0, readBuffer.find("value") + 8);
+            readBuffer.erase(readBuffer.length() - 2, readBuffer.length());
+
+            std::cout << readBuffer << "\n";
         }
         else{
             std::cout << "curl_easy_perform() failed: " << curl_easy_strerror(response) << "\n";
@@ -36,5 +39,6 @@ int main(){
     }
 
     curl_global_cleanup();
+
     return 0;
 }
