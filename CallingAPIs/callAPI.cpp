@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <curl/curl.h>
+#include <set>
 
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output){
     size_t totalSize = size * nmemb;
@@ -77,10 +78,10 @@ std::string ReadUserInput(){
             std::cout << "The longitude must be between -180 and 180\n";
         }while(true);
 
-        apiAddress = apiAddress + std::to_string(latitude) + "&longitude=" + std::to_string(longitude) + "&current=temperature_2m";
+        apiAddress = apiAddress + std::to_string(latitude) + "&longitude=" + std::to_string(longitude) + "&current=";
 
         int input = 0;
-        //Maybe a hashmap to keep the selected options
+        std::set<int> chosenOptions = {};
         while(true){
             std::cout << "Which data would you like to display? (0 to quit):" << "\n";
             std::cout << "1. temperature" << "\n";
@@ -90,6 +91,20 @@ std::string ReadUserInput(){
             std::cout << "5. cloud cover" << "\n";
 
             std::cin >> input;
+            // std::stoi(); or std::is_digit();
+
+            bool invalidIput = false;
+            for(int option : chosenOptions){
+                if(input == option){
+                    std::cout << "You have already chosen option " << input << "\n";
+                    invalidIput = true;
+                }
+            }
+            
+            if(!invalidIput)
+                chosenOptions.insert(input);
+            else
+                continue;
 
             if(input == 0)
                 break;
@@ -97,7 +112,7 @@ std::string ReadUserInput(){
             switch (input)
             {
             case 1:
-                //apiAddress += ",temperature_2m";
+                apiAddress += ",temperature_2m";
                 break;
             case 2:
                 apiAddress += ",apparent_temperature";
@@ -112,9 +127,11 @@ std::string ReadUserInput(){
                 apiAddress += ",cloud_cover";
                 break;
             default:
-                std::cout << "Please enter a number from 0-5" << "\n";
+                std::cout << "Please enter a number from 0-5" << "\n"; // now this is never reached
                 break;
             }
+
+            std::cout << "You have chosen option " << input << "\n";
         }
 
         return apiAddress;
