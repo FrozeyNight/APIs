@@ -92,6 +92,10 @@ std::string ReadUserInput(){
 
             std::cin >> input;
             // std::stoi(); or std::is_digit();
+            if(std::isdigit(input) == 0){
+                std::cout << "Please enter a number\n";
+                continue;
+            }
 
             bool invalidIput = false;
             for(int option : chosenOptions){
