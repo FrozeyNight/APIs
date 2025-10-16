@@ -2,6 +2,7 @@
 #include <string>
 #include <curl/curl.h>
 #include <set>
+#include <limits>
 
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output){
     size_t totalSize = size * nmemb;
@@ -65,6 +66,12 @@ std::string ReadUserInput(){
         do{
             std::cout << "Latitude: ";
             std::cin >> latitude;
+            if(std::cin.fail()){
+                std::cout << "Please enter a number\n";
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                continue;
+            }
             if(latitude <= 90 && latitude >= -90)
                 break;
             std::cout << "The latitude must be between -90 and 90\n";
@@ -73,6 +80,12 @@ std::string ReadUserInput(){
         do{
             std::cout << "Longitude: ";
             std::cin >> longitude;
+            if(std::cin.fail()){
+                std::cout << "Please enter a number\n";
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                continue;
+            }
             if(longitude <= 180 && longitude >= -180)
                 break;
             std::cout << "The longitude must be between -180 and 180\n";
@@ -91,9 +104,10 @@ std::string ReadUserInput(){
             std::cout << "5. cloud cover" << "\n";
 
             std::cin >> input;
-            // std::stoi(); or std::is_digit();
-            if(std::isdigit(input) == 0){
+            if(std::cin.fail()){
                 std::cout << "Please enter a number\n";
+                std::cin.clear();
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
                 continue;
             }
 
@@ -131,8 +145,8 @@ std::string ReadUserInput(){
                 apiAddress += ",cloud_cover";
                 break;
             default:
-                std::cout << "Please enter a number from 0-5" << "\n"; // now this is never reached
-                break;
+                std::cout << "Please enter a number from 0-5" << "\n";
+                continue;
             }
 
             std::cout << "You have chosen option " << input << "\n";
