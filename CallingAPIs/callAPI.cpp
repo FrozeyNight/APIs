@@ -3,6 +3,7 @@
 #include <curl/curl.h>
 #include <set>
 #include <limits>
+#include <iomanip>
 
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output){
     size_t totalSize = size * nmemb;
@@ -10,7 +11,8 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* out
     return totalSize;
 }
 
-std::string ReadUserInput();
+std::string ReadUserInput(std::string userOptions[]);
+bool isValidUserInput(std::string errorMessage);
 
 int main(){
 
@@ -25,7 +27,8 @@ int main(){
         struct curl_slist* headers = NULL;
         headers = curl_slist_append(headers, "Accept: application/json");
 
-        std::string apiAddress = ReadUserInput();
+        std::string userOptions[7];
+        std::string apiAddress = ReadUserInput(userOptions);
 
         curl_easy_setopt(curl, CURLOPT_URL, apiAddress.c_str()); // curl expects is more for C, so it doesn't know what a std::string is. You have to convert it into a char*
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -36,12 +39,20 @@ int main(){
         response = curl_easy_perform(curl);
 
         if(response == CURLE_OK){
-            std::cout << readBuffer << "\n";
-            readBuffer.erase(0, readBuffer.find_last_of("l") + 24);
-            //readBuffer.erase(readBuffer.length() - 2, readBuffer.length());
+            readBuffer.erase(0, readBuffer.find_last_of("T") + 39);
 
-            //std::cout << "The temperature at " << latitude << " " << longitude << " is " << readBuffer << "c" << "\n";
-            std::cout << "The temperature is " << readBuffer << "c" << "\n";
+            std::cout << "The chosen data for " << userOptions[0].substr(0, userOptions[0].find('.') + 3) << ", " << userOptions[1].substr(0, userOptions[1].find('.') + 3) << ":\n";
+
+            readBuffer = readBuffer.erase(0, readBuffer.find(':') + 1);
+            size_t userOptionIndex = 2;
+            while(readBuffer.find(':') != -1 && readBuffer.find(',') != -1){
+                std::cout << userOptions[userOptionIndex];
+                std::cout << readBuffer.substr(0, readBuffer.find(',')) << "\n";
+                readBuffer = readBuffer.erase(0, readBuffer.find(':') + 1);
+                userOptionIndex++;
+            }
+            std::cout << userOptions[userOptionIndex];
+            std::cout << readBuffer.substr(readBuffer.find(':') + 1, readBuffer.length() - readBuffer.find(':') - 3) << "\n";
         }
         else{
             std::cout << "curl_easy_perform() failed: " << curl_easy_strerror(response) << "\n";
@@ -56,38 +67,37 @@ int main(){
     return 0;
 }
 
-std::string ReadUserInput(){
+std::string ReadUserInput(std::string userOptions[]){
     
     std::string apiAddress = "https://api.open-meteo.com/v1/forecast?timezone=Europe%2FBerlin&latitude=";
 
         double latitude = 0;
         double longitude = 0;
+        size_t userOptionsIndex = 0;
 
         do{
             std::cout << "Latitude: ";
             std::cin >> latitude;
-            if(std::cin.fail()){
-                std::cout << "Please enter a number\n";
-                std::cin.clear();
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            if(!isValidUserInput("Please enter a number"))
                 continue;
-            }
-            if(latitude <= 90 && latitude >= -90)
+            if(latitude <= 90 && latitude >= -90){
+                userOptions[userOptionsIndex] = std::to_string(latitude);
+                userOptionsIndex++;
                 break;
+            }
             std::cout << "The latitude must be between -90 and 90\n";
         }while(true);
 
         do{
             std::cout << "Longitude: ";
             std::cin >> longitude;
-            if(std::cin.fail()){
-                std::cout << "Please enter a number\n";
-                std::cin.clear();
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            if(!isValidUserInput("Please enter a number"))
                 continue;
-            }
-            if(longitude <= 180 && longitude >= -180)
+            if(longitude <= 180 && longitude >= -180){
+                userOptions[userOptionsIndex] = std::to_string(longitude);
+                userOptionsIndex++;
                 break;
+            }
             std::cout << "The longitude must be between -180 and 180\n";
         }while(true);
 
@@ -104,12 +114,8 @@ std::string ReadUserInput(){
             std::cout << "5. cloud cover" << "\n";
 
             std::cin >> input;
-            if(std::cin.fail()){
-                std::cout << "Please enter a number\n";
-                std::cin.clear();
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            if(!isValidUserInput("Please enter a number"))
                 continue;
-            }
 
             bool invalidIput = false;
             for(int option : chosenOptions){
@@ -131,18 +137,28 @@ std::string ReadUserInput(){
             {
             case 1:
                 apiAddress += ",temperature_2m";
+                userOptions[userOptionsIndex] = "Temperature (Celsius): ";
+                userOptionsIndex++;
                 break;
             case 2:
                 apiAddress += ",apparent_temperature";
+                userOptions[userOptionsIndex] = "Apparent Temperature (Celsius): ";
+                userOptionsIndex++;
                 break;
             case 3:
                 apiAddress += ",relative_humidity_2m";
+                userOptions[userOptionsIndex] = "Relative Humidity (%): ";
+                userOptionsIndex++;
                 break;
             case 4:
                 apiAddress += ",wind_speed_10m";
+                userOptions[userOptionsIndex] = "Wind Speed (km/h): ";
+                userOptionsIndex++;
                 break;
             case 5:
                 apiAddress += ",cloud_cover";
+                userOptions[userOptionsIndex] = "Cloud Cover (%): ";
+                userOptionsIndex++;
                 break;
             default:
                 std::cout << "Please enter a number from 0-5" << "\n";
@@ -153,4 +169,14 @@ std::string ReadUserInput(){
         }
 
         return apiAddress;
+}
+
+bool isValidUserInput(std::string errorMessage){
+    if(std::cin.fail()){
+        std::cout << errorMessage << "\n";
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        return false;
+    }
+    return true;
 }
