@@ -2,7 +2,7 @@
 #include <string>
 #include <curl/curl.h>
 #include <set>
-#include <limits>
+#include <sstream>
 
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output){
     size_t totalSize = size * nmemb;
@@ -11,7 +11,6 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* out
 }
 
 std::string ReadUserInput(std::string userOptions[]);
-bool isValidUserInput(std::string errorMessage);
 double getValidatedCoordinate(const std::string& name, double min, double max);
 
 int main(){
@@ -78,7 +77,7 @@ std::string ReadUserInput(std::string userOptions[]){
     userOptionsIndex++;
 
     double longitude = getValidatedCoordinate("Longitude", -180, 180);
-    userOptions[userOptionsIndex] = std::to_string(latitude);
+    userOptions[userOptionsIndex] = std::to_string(longitude);
     userOptionsIndex++;
 
     apiAddress = apiAddress + std::to_string(latitude) + "&longitude=" + std::to_string(longitude) + "&current=";
@@ -93,9 +92,16 @@ std::string ReadUserInput(std::string userOptions[]){
         std::cout << "4. wind speed" << "\n";
         std::cout << "5. cloud cover" << "\n";
 
-        std::cin >> input;
-        if(!isValidUserInput("Please enter a number"))
+        std::string line;
+        std::getline(std::cin, line);
+        std::stringstream ss(line);
+        if(ss >> input && ss.eof()){
+            std::cout << "You have chosen option " << input << "\n";
+        }
+        else{
+            std::cout << "Please enter a valid number\n";
             continue;
+        }
 
         if(!chosenOptions.insert(input).second){
             std::cout << "You have already chosen option " << input << "\n";
@@ -139,31 +145,23 @@ std::string ReadUserInput(std::string userOptions[]){
             continue;
         }
 
-        std::cout << "You have chosen option " << input << "\n";
     }
 
     return apiAddress;
 }
 
-bool isValidUserInput(std::string errorMessage){
-    if(std::cin.fail()){
-        std::cout << errorMessage << "\n";
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        return false;
-    }
-    return true;
-}
-
 double getValidatedCoordinate(const std::string& name, double min, double max) {
     double value;
+    std::string line;
     while (true) {
         std::cout << name << ": ";
-        std::cin >> value;
-        if (!isValidUserInput("Please enter a number"))
-            continue;
-        if (value >= min && value <= max)
-            return value;
-        std::cout << name << " must be between " << min << " and " << max << "\n";
+        std::getline(std::cin, line);
+        std::stringstream ss(line);
+        if (ss >> value && ss.eof()){
+            if (value >= min && value <= max) return value;
+            std::cout << name << " must be between " << min << " and " << max << "\n";
+        }
+        else
+            std::cout << "Please enter a valid number\n";
     }
 }
