@@ -85,12 +85,12 @@ std::string ReadUserInput(std::string userOptions[]){
     int input = 0;
     std::set<int> chosenOptions = {};
     while(true){
-        std::cout << "Which data would you like to display? (0 to quit):" << "\n";
-        std::cout << "1. temperature" << "\n";
-        std::cout << "2. aparent temperature" << "\n";
-        std::cout << "3. humidity" << "\n";
-        std::cout << "4. wind speed" << "\n";
-        std::cout << "5. cloud cover" << "\n";
+        std::cout << "Which data would you like to display? (0 to quit):" << "\n"
+        "1. temperature" << "\n"
+        "2. aparent temperature" << "\n"
+        "3. humidity" << "\n"
+        "4. wind speed" << "\n"
+        "5. cloud cover" << "\n";
 
         std::string line;
         std::getline(std::cin, line);

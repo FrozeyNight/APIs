@@ -46,5 +46,32 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "set": "cpp"
-    }
+    },
+
+    // Use CMake Tools to configure IntelliSense and include paths
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+
+  // Automatically configure CMake when you open the project
+  "cmake.configureOnOpen": true,
+
+  // Set the build directory relative to the workspace
+  "cmake.buildDirectory": "${workspaceFolder}/build",
+
+  // Prefer Ninja or Unix Makefiles; adjust if needed
+  "cmake.generator": "Unix Makefiles",
+
+  // Enable parallel builds
+  "cmake.parallelJobs": 4,
+
+  // Use the same compiler everywhere
+  "C_Cpp.default.compilerPath": "/usr/bin/g++",
+
+  // Optional: make IntelliSense use C++20 standard
+  "C_Cpp.default.cppStandard": "c++20",
+
+  // Make sure clangd or cpptools uses compile_commands.json
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
+
+  // Optional: smoother experience with CMake Tools
+  "cmake.sourceDirectory": "${workspaceFolder}"
 }

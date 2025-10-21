@@ -39,3 +39,32 @@
 
 # debug information files
 *.dwo
+
+# CMake build directories
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# IDE-specific stuff
+.vscode/ipch/
+.vscode/.cmake/
+.vscode/launch.json
+.vscode/targets.log
+
+# Temporary files
+*.obj
+*.o
+*.log
+*.tmp
+*.exe
+*.out
+*.a
+*.so
+*.dll
+*.dSYM/
+*.swp
+
+# Dependency build folders (CMake FetchContent)
+_deps/
