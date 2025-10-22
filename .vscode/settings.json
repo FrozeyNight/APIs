@@ -48,30 +48,31 @@
         "set": "cpp"
     },
 
-    // Use CMake Tools to configure IntelliSense and include paths
-  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+     // --- CMake configuration ---
+      "cmake.configureOnOpen": true,
+      "cmake.generator": "Ninja", // Use Ninja on all platforms
+      "cmake.buildDirectory": "${workspaceFolder}/build",
+      "cmake.sourceDirectory": "${workspaceFolder}",
 
-  // Automatically configure CMake when you open the project
-  "cmake.configureOnOpen": true,
+      // Automatically pick the best compiler
+      // Linux → /usr/bin/g++
+      // Windows → MSVC (from Visual Studio or Build Tools)
+      "C_Cpp.default.compilerPath": "${command:cmake.getActiveKitCompilerPath}",
 
-  // Set the build directory relative to the workspace
-  "cmake.buildDirectory": "${workspaceFolder}/build",
+      // --- IntelliSense integration ---
+      "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+      "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
+      "C_Cpp.default.cppStandard": "c++20",
+      "C_Cpp.default.intelliSenseMode": "linux-gcc-x64",
 
-  // Prefer Ninja or Unix Makefiles; adjust if needed
-  "cmake.generator": "Unix Makefiles",
+      // --- Quality of life ---
+      "cmake.parallelJobs": 4,
+      "cmake.loggingLevel": "error",
+      "cmake.showOptionsMovedNotification": false,
 
-  // Enable parallel builds
-  "cmake.parallelJobs": 4,
+      // --- Optional: auto-configure when you switch branches or pull ---
+      "cmake.configureOnEdit": true,
+      "cmake.configureOnBuild": true
 
-  // Use the same compiler everywhere
-  "C_Cpp.default.compilerPath": "/usr/bin/g++",
-
-  // Optional: make IntelliSense use C++20 standard
-  "C_Cpp.default.cppStandard": "c++20",
-
-  // Make sure clangd or cpptools uses compile_commands.json
-  "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
-
-  // Optional: smoother experience with CMake Tools
-  "cmake.sourceDirectory": "${workspaceFolder}"
+  
 }
