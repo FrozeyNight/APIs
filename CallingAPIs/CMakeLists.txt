@@ -20,16 +20,6 @@ add_executable(callAPI ${CALLAPI_SOURCES})
 include(FetchContent)
 
 # ======================
-# fmt (string formatting)
-# ======================
-FetchContent_Declare(
-  fmt
-  GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-  GIT_TAG 11.0.1
-)
-FetchContent_MakeAvailable(fmt)
-
-# ======================
 # nlohmann/json (JSON)
 # ======================
 FetchContent_Declare(
@@ -73,7 +63,6 @@ target_include_directories(callAPI PRIVATE ${CMAKE_SOURCE_DIR}/include)
 # Link dependencies
 target_link_libraries(callAPI
   PRIVATE
-    fmt::fmt
     nlohmann_json::nlohmann_json
     CURL::libcurl
 )
