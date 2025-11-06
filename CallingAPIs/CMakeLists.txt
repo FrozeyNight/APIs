@@ -1,10 +1,10 @@
 # CallingAPIs/CMakeLists.txt
 # ==========================
-# Build the callAPI executable and automatically fetch dependencies.
+# Build the myWeather executable and automatically fetch dependencies.
 # Cross-platform: works on Linux and Windows (with HTTPS support).
 
 cmake_minimum_required(VERSION 3.16)
-project(callAPI LANGUAGES CXX)
+project(myWeather LANGUAGES CXX)
 
 # Always use at least C++17 for modern libraries
 set(CMAKE_CXX_STANDARD 17)
@@ -12,9 +12,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Collect all .cpp files automatically
-file(GLOB CALLAPI_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+file(GLOB MYWEATHER_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
-add_executable(callAPI ${CALLAPI_SOURCES})
+add_executable(myWeather ${MYWEATHER_SOURCES})
 
 # --- Include FetchContent for dependency management ---
 include(FetchContent)
@@ -58,10 +58,10 @@ FetchContent_MakeAvailable(curl)
 # ======================
 # Target configuration
 # ======================
-target_include_directories(callAPI PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_include_directories(myWeather PRIVATE ${CMAKE_SOURCE_DIR}/include)
 
 # Link dependencies
-target_link_libraries(callAPI
+target_link_libraries(myWeather
   PRIVATE
     nlohmann_json::nlohmann_json
     CURL::libcurl
@@ -69,8 +69,9 @@ target_link_libraries(callAPI
 
 # Optional: nicer warnings
 if(MSVC)
-  target_compile_options(callAPI PRIVATE /W4)
+  target_compile_options(myWeather PRIVATE /W4)
 else()
-  target_compile_options(callAPI PRIVATE -Wall -Wextra -pedantic)
+  target_compile_options(myWeather PRIVATE -Wall -Wextra -pedantic)
 endif()
 
+install(TARGETS ${PROJECT_NAME} DESTINATION bin)
