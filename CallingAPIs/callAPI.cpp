@@ -13,8 +13,11 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* out
 
 std::string ReadUserInput(std::string userOptions[], std::string userOptionsLiteral[]);
 double getValidatedCoordinate(const std::string& name, double min, double max);
+void saveUserInput(int input, std::string userOptionsLiteral[], std::string userOptions[], size_t *userOptionsIndex, std::string *apiAddress);
+void getUserOptions(std::string userOptionsLiteral[], std::string userOptions[], size_t *userOptionsIndex, std::string *apiAddress);
+void getUserCoordinates(double *latitude, double *longitude, std::string userOptionsLiteral[], size_t *userOptionsIndex);
 
-int main(){
+int main(int argc, char* argv[]){
 
     CURL* curl;
     CURLcode response;
@@ -29,7 +32,49 @@ int main(){
 
         std::string userOptions[7];
         std::string userOptionsLiteral[7];
-        std::string apiAddress = ReadUserInput(userOptions, userOptionsLiteral);
+
+        std::string apiAddress = "";
+
+        if(argc > 1){
+            apiAddress = "https://api.open-meteo.com/v1/forecast?timezone=Europe%2FBerlin&latitude=";
+            size_t userOptionsIndex = 0;
+
+            double latitude = 0;
+            double longitude = 0;
+            for (int i = 1; i < argc; i++)
+            {
+                std::string argument = argv[i];
+                if(argument == "-ao"){
+
+                    getUserCoordinates(&latitude, &longitude, userOptionsLiteral, &userOptionsIndex);
+
+                    apiAddress = apiAddress + std::to_string(latitude) + "&longitude=" + std::to_string(longitude) + "&current=";
+
+                    for (size_t i = 1; i < 6; i++)
+                    {
+                        saveUserInput(i, userOptionsLiteral, userOptions, &userOptionsIndex, &apiAddress);
+                    }
+                }
+                else if(argument[0] == '-' && argument[1] == 'c'){
+                    latitude = std::stod(argument.substr(2, argument.find(',') - 2));
+                    userOptionsLiteral[userOptionsIndex] = std::to_string(latitude);
+                    userOptionsIndex = userOptionsIndex + 1;
+
+                    longitude = std::stod(argument.substr(argument.find(',') + 1, argument.length() - argument.find(',') - 1));
+                    userOptionsLiteral[userOptionsIndex] = std::to_string(longitude);
+                    userOptionsIndex = userOptionsIndex + 1;
+
+
+                    apiAddress = apiAddress + std::to_string(latitude) + "&longitude=" + std::to_string(longitude) + "&current=";
+
+                    getUserOptions(userOptionsLiteral, userOptions, &userOptionsIndex, &apiAddress);
+                }
+            }
+            
+        }
+        else{
+            apiAddress = ReadUserInput(userOptions, userOptionsLiteral);
+        }
 
         curl_easy_setopt(curl, CURLOPT_URL, apiAddress.c_str()); // curl is more for C, so it doesn't know what a std::string is. You have to convert it into a char*
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -72,17 +117,73 @@ std::string ReadUserInput(std::string userOptions[], std::string userOptionsLite
     std::string apiAddress = "https://api.open-meteo.com/v1/forecast?timezone=Europe%2FBerlin&latitude=";
     
     size_t userOptionsIndex = 0;
+    double latitude = 0;
+    double longitude = 0;
 
-    double latitude = getValidatedCoordinate("Latitude", -90, 90);
-    userOptionsLiteral[userOptionsIndex] = std::to_string(latitude);
-    userOptionsIndex++;
-
-    double longitude = getValidatedCoordinate("Longitude", -180, 180);
-    userOptionsLiteral[userOptionsIndex] = std::to_string(longitude);
-    userOptionsIndex++;
+    getUserCoordinates(&latitude, &longitude, userOptionsLiteral, &userOptionsIndex);
 
     apiAddress = apiAddress + std::to_string(latitude) + "&longitude=" + std::to_string(longitude) + "&current=";
 
+    getUserOptions(userOptionsLiteral, userOptions, &userOptionsIndex, &apiAddress);
+
+    return apiAddress;
+}
+
+double getValidatedCoordinate(const std::string& name, double min, double max) {
+    double value;
+    std::string line;
+    while (true) {
+        std::cout << name << ": ";
+        std::getline(std::cin, line);
+        std::stringstream ss(line);
+        if (ss >> value && ss.eof()){
+            if (value >= min && value <= max) return value;
+            std::cout << name << " must be between " << min << " and " << max << "\n";
+        }
+        else
+            std::cout << "Please enter a valid number\n";
+    }
+}
+
+void saveUserInput(int input, std::string userOptionsLiteral[], std::string userOptions[], size_t *userOptionsIndex, std::string *apiAddress){
+    switch (input)
+    {
+        case 1:
+            *apiAddress += ",temperature_2m";
+            userOptionsLiteral[*userOptionsIndex] = "temperature_2m";
+            userOptions[*userOptionsIndex] = "Temperature (Celsius): ";
+            *userOptionsIndex = *userOptionsIndex + 1;
+            break;
+        case 2:
+            *apiAddress += ",apparent_temperature";
+            userOptionsLiteral[*userOptionsIndex] = "apparent_temperature";
+            userOptions[*userOptionsIndex] = "Apparent Temperature (Celsius): ";
+            *userOptionsIndex = *userOptionsIndex + 1;
+            break;
+        case 3:
+            *apiAddress += ",relative_humidity_2m";
+            userOptionsLiteral[*userOptionsIndex] = "relative_humidity_2m";
+            userOptions[*userOptionsIndex] = "Relative Humidity (%): ";
+            *userOptionsIndex = *userOptionsIndex + 1;
+            break;
+        case 4:
+            *apiAddress += ",wind_speed_10m";
+            userOptionsLiteral[*userOptionsIndex] = "wind_speed_10m";
+            userOptions[*userOptionsIndex] = "Wind Speed (km/h): ";
+            *userOptionsIndex = *userOptionsIndex + 1;
+            break;
+        case 5:
+            *apiAddress += ",cloud_cover";
+            userOptionsLiteral[*userOptionsIndex] = "cloud_cover";
+            userOptions[*userOptionsIndex] = "Cloud Cover (%): ";
+            *userOptionsIndex = *userOptionsIndex + 1;
+            break;
+        default:
+            std::cout << "Please enter a number from 0-5" << "\n";
+    }
+}
+
+void getUserOptions(std::string userOptionsLiteral[], std::string userOptions[], size_t *userOptionsIndex, std::string *apiAddress){
     int input = 0;
     std::set<int> chosenOptions = {};
     while(true){
@@ -113,60 +214,17 @@ std::string ReadUserInput(std::string userOptions[], std::string userOptionsLite
             continue;
         }
 
-        switch (input)
-        {
-        case 1:
-            apiAddress += ",temperature_2m";
-            userOptionsLiteral[userOptionsIndex] = "temperature_2m";
-            userOptions[userOptionsIndex] = "Temperature (Celsius): ";
-            userOptionsIndex++;
-            break;
-        case 2:
-            apiAddress += ",apparent_temperature";
-            userOptionsLiteral[userOptionsIndex] = "apparent_temperature";
-            userOptions[userOptionsIndex] = "Apparent Temperature (Celsius): ";
-            userOptionsIndex++;
-            break;
-        case 3:
-            apiAddress += ",relative_humidity_2m";
-            userOptionsLiteral[userOptionsIndex] = "relative_humidity_2m";
-            userOptions[userOptionsIndex] = "Relative Humidity (%): ";
-            userOptionsIndex++;
-            break;
-        case 4:
-            apiAddress += ",wind_speed_10m";
-            userOptionsLiteral[userOptionsIndex] = "wind_speed_10m";
-            userOptions[userOptionsIndex] = "Wind Speed (km/h): ";
-            userOptionsIndex++;
-            break;
-        case 5:
-            apiAddress += ",cloud_cover";
-            userOptionsLiteral[userOptionsIndex] = "cloud_cover";
-            userOptions[userOptionsIndex] = "Cloud Cover (%): ";
-            userOptionsIndex++;
-            break;
-        default:
-            std::cout << "Please enter a number from 0-5" << "\n";
-            continue;
-        }
-
+        saveUserInput(input, userOptionsLiteral, userOptions, userOptionsIndex, apiAddress);
     }
 
-    return apiAddress;
 }
 
-double getValidatedCoordinate(const std::string& name, double min, double max) {
-    double value;
-    std::string line;
-    while (true) {
-        std::cout << name << ": ";
-        std::getline(std::cin, line);
-        std::stringstream ss(line);
-        if (ss >> value && ss.eof()){
-            if (value >= min && value <= max) return value;
-            std::cout << name << " must be between " << min << " and " << max << "\n";
-        }
-        else
-            std::cout << "Please enter a valid number\n";
-    }
+void getUserCoordinates(double *latitude, double *longitude, std::string userOptionsLiteral[], size_t *userOptionsIndex){
+    *latitude = getValidatedCoordinate("Latitude", -90, 90);
+    userOptionsLiteral[*userOptionsIndex] = std::to_string(*latitude);
+    *userOptionsIndex = *userOptionsIndex + 1;
+
+    *longitude = getValidatedCoordinate("Longitude", -180, 180);
+    userOptionsLiteral[*userOptionsIndex] = std::to_string(*longitude);
+    *userOptionsIndex = *userOptionsIndex + 1;
 }
