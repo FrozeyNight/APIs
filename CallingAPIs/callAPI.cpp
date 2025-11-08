@@ -11,7 +11,6 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* out
     return totalSize;
 }
 
-std::string ReadUserInput(std::string userOptions[], std::string userOptionsLiteral[]);
 double getValidatedCoordinate(const std::string& name, double min, double max);
 void saveUserInput(int input, std::string userOptionsLiteral[], std::string userOptions[], size_t *userOptionsIndex, std::string *apiAddress);
 void getUserOptions(std::string userOptionsLiteral[], std::string userOptions[], size_t *userOptionsIndex, std::string *apiAddress);
@@ -35,45 +34,41 @@ int main(int argc, char* argv[]){
 
         std::string apiAddress = "";
 
-        if(argc > 1){
-            apiAddress = "https://api.open-meteo.com/v1/forecast?timezone=Europe%2FBerlin&latitude=";
-            size_t userOptionsIndex = 0;
+        apiAddress = "https://api.open-meteo.com/v1/forecast?timezone=Europe%2FBerlin&latitude=";
+        size_t userOptionsIndex = 0;
 
-            double latitude = 0;
-            double longitude = 0;
-            for (int i = 1; i < argc; i++)
-            {
-                std::string argument = argv[i];
-                if(argument == "-ao"){
+        double latitude = 0;
+        double longitude = 0;
+        std::string arguments[argc];
 
-                    getUserCoordinates(&latitude, &longitude, userOptionsLiteral, &userOptionsIndex);
+        for(int i = 1; i < argc; i++){
+            arguments[i - 1] = argv[i];
+        }
 
-                    apiAddress = apiAddress + std::to_string(latitude) + "&longitude=" + std::to_string(longitude) + "&current=";
+        if(arguments[0][0] == '-' && arguments[0][1] == 'c'){
+            std::string argument = arguments[0];
+            latitude = std::stod(argument.substr(2, argument.find(',') - 2));
+            userOptionsLiteral[userOptionsIndex] = std::to_string(latitude);
+            userOptionsIndex = userOptionsIndex + 1;
 
-                    for (size_t i = 1; i < 6; i++)
-                    {
-                        saveUserInput(i, userOptionsLiteral, userOptions, &userOptionsIndex, &apiAddress);
-                    }
-                }
-                else if(argument[0] == '-' && argument[1] == 'c'){
-                    latitude = std::stod(argument.substr(2, argument.find(',') - 2));
-                    userOptionsLiteral[userOptionsIndex] = std::to_string(latitude);
-                    userOptionsIndex = userOptionsIndex + 1;
-
-                    longitude = std::stod(argument.substr(argument.find(',') + 1, argument.length() - argument.find(',') - 1));
-                    userOptionsLiteral[userOptionsIndex] = std::to_string(longitude);
-                    userOptionsIndex = userOptionsIndex + 1;
-
-
-                    apiAddress = apiAddress + std::to_string(latitude) + "&longitude=" + std::to_string(longitude) + "&current=";
-
-                    getUserOptions(userOptionsLiteral, userOptions, &userOptionsIndex, &apiAddress);
-                }
-            }
-            
+            longitude = std::stod(argument.substr(argument.find(',') + 1, argument.length() - argument.find(',') - 1));
+            userOptionsLiteral[userOptionsIndex] = std::to_string(longitude);
+            userOptionsIndex = userOptionsIndex + 1;
         }
         else{
-            apiAddress = ReadUserInput(userOptions, userOptionsLiteral);
+            getUserCoordinates(&latitude, &longitude, userOptionsLiteral, &userOptionsIndex);
+        }
+
+        apiAddress = apiAddress + std::to_string(latitude) + "&longitude=" + std::to_string(longitude) + "&current=";
+
+        if(arguments[1] == "-ao" || arguments[0] == "-ao"){
+            for (size_t i = 1; i < 6; i++)
+            {
+                saveUserInput(i, userOptionsLiteral, userOptions, &userOptionsIndex, &apiAddress);
+            }
+        }
+        else{
+            getUserOptions(userOptionsLiteral, userOptions, &userOptionsIndex, &apiAddress);
         }
 
         curl_easy_setopt(curl, CURLOPT_URL, apiAddress.c_str()); // curl is more for C, so it doesn't know what a std::string is. You have to convert it into a char*
@@ -110,23 +105,6 @@ int main(int argc, char* argv[]){
     curl_global_cleanup();
 
     return 0;
-}
-
-std::string ReadUserInput(std::string userOptions[], std::string userOptionsLiteral[]){
-    
-    std::string apiAddress = "https://api.open-meteo.com/v1/forecast?timezone=Europe%2FBerlin&latitude=";
-    
-    size_t userOptionsIndex = 0;
-    double latitude = 0;
-    double longitude = 0;
-
-    getUserCoordinates(&latitude, &longitude, userOptionsLiteral, &userOptionsIndex);
-
-    apiAddress = apiAddress + std::to_string(latitude) + "&longitude=" + std::to_string(longitude) + "&current=";
-
-    getUserOptions(userOptionsLiteral, userOptions, &userOptionsIndex, &apiAddress);
-
-    return apiAddress;
 }
 
 double getValidatedCoordinate(const std::string& name, double min, double max) {
