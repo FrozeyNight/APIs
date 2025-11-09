@@ -15,94 +15,79 @@ double getValidatedCoordinate(const std::string& name, double min, double max);
 void saveUserInput(int input, std::string userOptionsLiteral[], std::string userOptions[], size_t *userOptionsIndex, std::string *apiAddress);
 void getUserOptions(std::string userOptionsLiteral[], std::string userOptions[], size_t *userOptionsIndex, std::string *apiAddress);
 void getUserCoordinates(double *latitude, double *longitude, std::string userOptionsLiteral[], size_t *userOptionsIndex);
+bool callAPI(std::string apiAddress, std::string *output);
 
 int main(int argc, char* argv[]){
 
-    CURL* curl;
-    CURLcode response;
-    std::string readBuffer;
+    std::string userOptions[7];
+    std::string userOptionsLiteral[7];
 
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-    curl = curl_easy_init();
+    std::string apiAddress = "";
 
-    if(curl){
-        struct curl_slist* headers = NULL;
-        headers = curl_slist_append(headers, "Accept: application/json");
+    apiAddress = "https://api.open-meteo.com/v1/forecast?timezone=Europe%2FBerlin&latitude=";
+    size_t userOptionsIndex = 0;
 
-        std::string userOptions[7];
-        std::string userOptionsLiteral[7];
+    double latitude = 0;
+    double longitude = 0;
+    std::string arguments[argc];
 
-        std::string apiAddress = "";
+    for(int i = 1; i < argc; i++){
+        arguments[i - 1] = argv[i];
+    }
 
-        apiAddress = "https://api.open-meteo.com/v1/forecast?timezone=Europe%2FBerlin&latitude=";
-        size_t userOptionsIndex = 0;
-
-        double latitude = 0;
-        double longitude = 0;
-        std::string arguments[argc];
-
-        for(int i = 1; i < argc; i++){
-            arguments[i - 1] = argv[i];
-        }
-
-        if(arguments[0][0] == '-' && arguments[0][1] == 'c'){
-            std::string argument = arguments[0];
-            latitude = std::stod(argument.substr(2, argument.find(',') - 2));
+    if(arguments[0] == "-gc"){
+        std::string geolocationData;
+        if(callAPI("http://ip-api.com/json/", &geolocationData)){
+            nlohmann::json data = nlohmann::json::parse(geolocationData);
+            latitude = data["lat"];
             userOptionsLiteral[userOptionsIndex] = std::to_string(latitude);
             userOptionsIndex = userOptionsIndex + 1;
 
-            longitude = std::stod(argument.substr(argument.find(',') + 1, argument.length() - argument.find(',') - 1));
+            longitude = data["lon"];
             userOptionsLiteral[userOptionsIndex] = std::to_string(longitude);
             userOptionsIndex = userOptionsIndex + 1;
         }
-        else{
-            getUserCoordinates(&latitude, &longitude, userOptionsLiteral, &userOptionsIndex);
-        }
+    }
+    else if(arguments[0][0] == '-' && arguments[0][1] == 'c'){
+        std::string argument = arguments[0];
+        latitude = std::stod(argument.substr(2, argument.find(',') - 2));
+        userOptionsLiteral[userOptionsIndex] = std::to_string(latitude);
+        userOptionsIndex = userOptionsIndex + 1;
 
-        apiAddress = apiAddress + std::to_string(latitude) + "&longitude=" + std::to_string(longitude) + "&current=";
-
-        if(arguments[1] == "-ao" || arguments[0] == "-ao"){
-            for (size_t i = 1; i < 6; i++)
-            {
-                saveUserInput(i, userOptionsLiteral, userOptions, &userOptionsIndex, &apiAddress);
-            }
-        }
-        else{
-            getUserOptions(userOptionsLiteral, userOptions, &userOptionsIndex, &apiAddress);
-        }
-
-        curl_easy_setopt(curl, CURLOPT_URL, apiAddress.c_str()); // curl is more for C, so it doesn't know what a std::string is. You have to convert it into a char*
-        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-
-        response = curl_easy_perform(curl);
-
-        if(response == CURLE_OK){
-            std::cout << "The chosen data for " << userOptionsLiteral[0].substr(0, userOptionsLiteral[0].find('.') + 3) << ", " << userOptionsLiteral[1].substr(0, userOptionsLiteral[1].find('.') + 3) << ":\n";
-
-            nlohmann::json data = nlohmann::json::parse(readBuffer);
-            const auto& current = data["current"];
-            for (size_t i = 2; i < sizeof(userOptionsLiteral)/sizeof(std::string) && !userOptionsLiteral[i].empty(); ++i) {
-                if (current.contains(userOptionsLiteral[i])) {
-                    std::cout << userOptions[i] << current[userOptionsLiteral[i]] << '\n';
-                } else {
-                    std::cout << userOptions[i] << "Not available\n";
-                }
-            }
-
-            
-        }
-        else{
-            std::cout << "curl_easy_perform() failed: " << curl_easy_strerror(response) << "\n";
-        }
-
-        curl_slist_free_all(headers);
-        curl_easy_cleanup(curl);
+        longitude = std::stod(argument.substr(argument.find(',') + 1, argument.length() - argument.find(',') - 1));
+        userOptionsLiteral[userOptionsIndex] = std::to_string(longitude);
+        userOptionsIndex = userOptionsIndex + 1;
+    }
+    else{
+        getUserCoordinates(&latitude, &longitude, userOptionsLiteral, &userOptionsIndex);
     }
 
-    curl_global_cleanup();
+    apiAddress = apiAddress + std::to_string(latitude) + "&longitude=" + std::to_string(longitude) + "&current=";
+
+    if(arguments[1] == "-ao" || arguments[0] == "-ao"){
+        for (size_t i = 1; i < 6; i++)
+        {
+            saveUserInput(i, userOptionsLiteral, userOptions, &userOptionsIndex, &apiAddress);
+        }
+    }
+    else{
+        getUserOptions(userOptionsLiteral, userOptions, &userOptionsIndex, &apiAddress);
+    }
+
+    std::string weatherData = "";
+    if(callAPI(apiAddress, &weatherData)){
+        std::cout << "The chosen data for " << userOptionsLiteral[0].substr(0, userOptionsLiteral[0].find('.') + 3) << ", " << userOptionsLiteral[1].substr(0, userOptionsLiteral[1].find('.') + 3) << ":\n";
+
+        nlohmann::json data = nlohmann::json::parse(weatherData);
+        const auto& current = data["current"];
+        for (size_t i = 2; i < sizeof(userOptionsLiteral)/sizeof(std::string) && !userOptionsLiteral[i].empty(); ++i) {
+            if (current.contains(userOptionsLiteral[i])) {
+                std::cout << userOptions[i] << current[userOptionsLiteral[i]] << '\n';
+            } else {
+                std::cout << userOptions[i] << "Not available\n";
+            }
+        }
+    }
 
     return 0;
 }
@@ -205,4 +190,40 @@ void getUserCoordinates(double *latitude, double *longitude, std::string userOpt
     *longitude = getValidatedCoordinate("Longitude", -180, 180);
     userOptionsLiteral[*userOptionsIndex] = std::to_string(*longitude);
     *userOptionsIndex = *userOptionsIndex + 1;
+}
+
+bool callAPI(std::string apiAddress, std::string *output){
+    CURL* curl;
+    CURLcode response;
+    std::string readBuffer;
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    curl = curl_easy_init();
+
+    if(curl){
+        struct curl_slist* headers = NULL;
+        headers = curl_slist_append(headers, "Accept: application/json");
+
+        curl_easy_setopt(curl, CURLOPT_URL, apiAddress.c_str()); // curl is more for C, so it doesn't know what a std::string is. You have to convert it into a char*
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+        response = curl_easy_perform(curl);
+        curl_slist_free_all(headers);
+        curl_easy_cleanup(curl);
+
+        if(response == CURLE_OK){
+            *output = readBuffer;
+            return true;
+        }
+        else{
+            std::cout << "curl_easy_perform() failed: " << curl_easy_strerror(response) << "\n";
+            return false;
+        }
+
+    }
+
+    return false;
 }
