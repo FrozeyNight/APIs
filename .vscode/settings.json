@@ -80,7 +80,7 @@
         "variant": "cpp"
     },
 
-     // --- CMake configuration ---
+      // --- CMake configuration ---
       "cmake.configureOnOpen": true,
       "cmake.generator": "Ninja", // Use Ninja on all platforms
       "cmake.buildDirectory": "${workspaceFolder}/build",
@@ -104,7 +104,11 @@
 
       // --- Optional: auto-configure when you switch branches or pull ---
       "cmake.configureOnEdit": true,
-      "cmake.configureOnBuild": true
+      "cmake.configureOnBuild": true,
+      "cSpell.words": [
+        "MYWEATHER",
+        "nlohmann"
+      ]
 
   
 }
