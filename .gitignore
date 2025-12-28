@@ -68,3 +68,5 @@ Makefile
 
 # Dependency build folders (CMake FetchContent)
 _deps/
+
+extern/
