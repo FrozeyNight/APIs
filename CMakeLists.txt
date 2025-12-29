@@ -72,4 +72,4 @@ target_include_directories(myWeather PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/CallingAPIs/include
 )
 
-install(TARGETS ${PROJECT_NAME} DESTINATION bin)
+#install(TARGETS ${PROJECT_NAME} DESTINATION bin)

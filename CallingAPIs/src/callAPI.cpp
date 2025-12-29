@@ -17,7 +17,7 @@ void getUserOptions(std::string userOptionsLiteral[], std::string userOptions[],
 void getUserCoordinates(double *latitude, double *longitude, std::string userOptionsLiteral[], size_t *userOptionsIndex);
 bool callAPI(std::string apiAddress, std::string *output);
 
-int main(int argc, char* argv[]){
+int RunMyWeather(int argc, char* argv[]){
 
     std::string userOptions[7];
     std::string userOptionsLiteral[7];
