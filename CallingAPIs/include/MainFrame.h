@@ -1,5 +1,7 @@
 #pragma once
 #include <wx/wx.h>
+#include <string>
+#include <vector>
 
 class MainFrame : public wxFrame{
 public:
@@ -7,6 +9,10 @@ public:
 private:
     void CreateControls();
     void SetupSizers();
+    void BindEventHandlers();
+
+    void OnShowDataButtonClicked(wxCommandEvent& evt);
+
     wxPanel* panel;
     wxStaticText* headlineText;
     wxCheckBox* autoCoords;
@@ -16,5 +22,6 @@ private:
     wxStaticText* lonText;
     wxTextCtrl* lonInput;
     wxCheckListBox* weatherOptions;
+    wxButton* showDataButton;
     wxListBox* output;
 };

@@ -4,20 +4,16 @@
 #include <set>
 #include <sstream>
 #include <nlohmann/json.hpp>
+#include <vector>
+#include "CallAPI.h"
 
-size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output){
+size_t CallAPI::WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output){
     size_t totalSize = size * nmemb;
     output->append((char*)contents, totalSize);
     return totalSize;
 }
 
-double getValidatedCoordinate(const std::string& name, double min, double max);
-void saveUserInput(int input, std::string userOptionsLiteral[], std::string userOptions[], size_t *userOptionsIndex, std::string *apiAddress);
-void getUserOptions(std::string userOptionsLiteral[], std::string userOptions[], size_t *userOptionsIndex, std::string *apiAddress);
-void getUserCoordinates(double *latitude, double *longitude, std::string userOptionsLiteral[], size_t *userOptionsIndex);
-bool callAPI(std::string apiAddress, std::string *output);
-
-int RunMyWeather(int argc, char* argv[]){
+std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
 
     std::string userOptions[7];
     std::string userOptionsLiteral[7];
@@ -75,24 +71,27 @@ int RunMyWeather(int argc, char* argv[]){
     }
 
     std::string weatherData = "";
+    std::vector<std::string> formattedWeatherData;
     if(callAPI(apiAddress, &weatherData)){
-        std::cout << "The chosen data for " << userOptionsLiteral[0].substr(0, userOptionsLiteral[0].find('.') + 3) << ", " << userOptionsLiteral[1].substr(0, userOptionsLiteral[1].find('.') + 3) << ":\n";
+        //std::cout << "The chosen data for " << userOptionsLiteral[0].substr(0, userOptionsLiteral[0].find('.') + 3) << ", " << userOptionsLiteral[1].substr(0, userOptionsLiteral[1].find('.') + 3) << ":\n";
 
         nlohmann::json data = nlohmann::json::parse(weatherData);
         const auto& current = data["current"];
         for (size_t i = 2; i < sizeof(userOptionsLiteral)/sizeof(std::string) && !userOptionsLiteral[i].empty(); ++i) {
             if (current.contains(userOptionsLiteral[i])) {
-                std::cout << userOptions[i] << current[userOptionsLiteral[i]] << '\n';
+                formattedWeatherData.push_back(userOptions[i] + current[userOptionsLiteral[i]].dump());
+                //std::cout << userOptions[i] << current[userOptionsLiteral[i]] << '\n';
             } else {
-                std::cout << userOptions[i] << "Not available\n";
+                //std::cout << userOptions[i] << "Not available\n";
+                formattedWeatherData.push_back(userOptions[i] + "Not available");
             }
         }
     }
-
-    return 0;
+    
+    return formattedWeatherData;
 }
 
-double getValidatedCoordinate(const std::string& name, double min, double max) {
+double CallAPI::getValidatedCoordinate(const std::string& name, double min, double max) {
     double value;
     std::string line;
     while (true) {
@@ -108,7 +107,7 @@ double getValidatedCoordinate(const std::string& name, double min, double max) {
     }
 }
 
-void saveUserInput(int input, std::string userOptionsLiteral[], std::string userOptions[], size_t *userOptionsIndex, std::string *apiAddress){
+void CallAPI::saveUserInput(int input, std::string userOptionsLiteral[], std::string userOptions[], size_t *userOptionsIndex, std::string *apiAddress){
     switch (input)
     {
         case 1:
@@ -146,7 +145,7 @@ void saveUserInput(int input, std::string userOptionsLiteral[], std::string user
     }
 }
 
-void getUserOptions(std::string userOptionsLiteral[], std::string userOptions[], size_t *userOptionsIndex, std::string *apiAddress){
+void CallAPI::getUserOptions(std::string userOptionsLiteral[], std::string userOptions[], size_t *userOptionsIndex, std::string *apiAddress){
     int input = 0;
     std::set<int> chosenOptions = {};
     while(true){
@@ -182,7 +181,7 @@ void getUserOptions(std::string userOptionsLiteral[], std::string userOptions[],
 
 }
 
-void getUserCoordinates(double *latitude, double *longitude, std::string userOptionsLiteral[], size_t *userOptionsIndex){
+void CallAPI::getUserCoordinates(double *latitude, double *longitude, std::string userOptionsLiteral[], size_t *userOptionsIndex){
     *latitude = getValidatedCoordinate("Latitude", -90, 90);
     userOptionsLiteral[*userOptionsIndex] = std::to_string(*latitude);
     *userOptionsIndex = *userOptionsIndex + 1;
@@ -192,7 +191,7 @@ void getUserCoordinates(double *latitude, double *longitude, std::string userOpt
     *userOptionsIndex = *userOptionsIndex + 1;
 }
 
-bool callAPI(std::string apiAddress, std::string *output){
+bool CallAPI::callAPI(std::string apiAddress, std::string *output){
     CURL* curl;
     CURLcode response;
     std::string readBuffer;

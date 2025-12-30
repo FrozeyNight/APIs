@@ -2,18 +2,15 @@
 #include <wx/wx.h>
 #include <vector>
 #include <string>
+#include "CallAPI.h"
 
 MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title){
     CreateControls();
     SetupSizers();
+    BindEventHandlers();
 }
 
 void MainFrame::CreateControls(){
-    // boxSizer with 4 elements
-    // the textCtrl and add button are in a nested sizer with the textCtrl having a proportion
-    // that nested sizer can extend only horizontally
-    // the checkListBox fills all available space
-    // the clearButton is center aligned and the clear button is left aligned, they don't expand
 
     wxFont headlineFont(wxFontInfo(wxSize(0, 36)).Bold()); // 0 means "choose a suitable width"
     wxFont mainFont(wxFontInfo(wxSize(0, 24)));
@@ -24,13 +21,16 @@ void MainFrame::CreateControls(){
     headlineText = new wxStaticText(panel, wxID_ANY, "myWeather");
     headlineText->SetFont(headlineFont);
 
-    autoCoords = new wxCheckBox(panel, wxID_ANY, "Get Coordinates Automatically", wxDefaultPosition, wxDefaultSize, wxCHK_CHECKED);
+    autoCoords = new wxCheckBox(panel, wxID_ANY, "Get Coordinates Automatically");
+    autoCoords->SetValue(1);
     latText = new wxStaticText(panel, wxID_ANY, "Latitude: ");
     latInput = new wxTextCtrl(panel, wxID_ANY);
     lonText = new wxStaticText(panel, wxID_ANY, "Longitude: ");
     lonInput = new wxTextCtrl(panel, wxID_ANY);
-    allOptions = new wxCheckBox(panel, wxID_ANY, "Display All Data", wxDefaultPosition, wxDefaultSize, wxCHK_CHECKED);
+    allOptions = new wxCheckBox(panel, wxID_ANY, "Display All Data");
+    allOptions->SetValue(1);
     weatherOptions = new wxCheckListBox(panel, wxID_ANY);
+    showDataButton = new wxButton(panel, wxID_ANY, "Show Data");
     output = new wxListBox(panel, wxID_ANY);
 }
 
@@ -63,7 +63,13 @@ void MainFrame::SetupSizers(){
     optionsSizer->Add(weatherOptions, wxSizerFlags().Expand().Proportion(1));
     optionsAndOutputSizer->Add(optionsSizer, wxSizerFlags().Expand().Proportion(1));
     optionsAndOutputSizer->AddSpacer(50);
-    optionsAndOutputSizer->Add(output, wxSizerFlags().Expand().Proportion(1));
+
+    wxBoxSizer* outputSizer = new wxBoxSizer(wxVERTICAL);
+    outputSizer->Add(showDataButton, wxSizerFlags().Expand());
+    outputSizer->AddSpacer(10);
+    outputSizer->Add(output, wxSizerFlags().Expand().Proportion(1));
+
+    optionsAndOutputSizer->Add(outputSizer, wxSizerFlags().Expand().Proportion(1));
 
     mainSizer->Add(optionsAndOutputSizer, wxSizerFlags().Expand().Proportion(1));
 
@@ -72,4 +78,17 @@ void MainFrame::SetupSizers(){
 
     panel->SetSizer(outerSizer);
     outerSizer->SetSizeHints(this);
+}
+
+void MainFrame::BindEventHandlers(){
+    showDataButton->Bind(wxEVT_BUTTON, &MainFrame::OnShowDataButtonClicked, this);
+}
+
+void MainFrame::OnShowDataButtonClicked(wxCommandEvent& evt){
+    output->Clear();
+    if(autoCoords->IsChecked() && allOptions->IsChecked()){
+        char* argv[] = {"", "-gc", "-ao"};
+        std::vector<std::string> weatherData = CallAPI::RunMyWeather(3, argv);
+        output->InsertItems(weatherData, 0);
+    }
 }
