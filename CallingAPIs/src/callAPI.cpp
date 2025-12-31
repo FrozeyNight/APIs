@@ -13,15 +13,17 @@ size_t CallAPI::WriteCallback(void* contents, size_t size, size_t nmemb, std::st
     return totalSize;
 }
 
-std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
+std::vector<std::string> CallAPI::userOptions;
+std::vector<std::string> CallAPI::userOptionsLiteral;
+std::vector<std::string> CallAPI::coordinates;
+std::vector<std::string> CallAPI::weatherOptions = {"Temperature (Celsius)", "Apparent Temperature (Celsius)", "Relative Humidity (%)", "Wind Speed (km/h)", "Cloud Cover (%)"};
+std::vector<std::string> CallAPI::weatherOptionsLiteral = {"temperature_2m", "apparent_temperature", "relative_humidity_2m", "wind_speed_10m", "cloud_cover"};
 
-    std::string userOptions[7];
-    std::string userOptionsLiteral[7];
+std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
 
     std::string apiAddress = "";
 
     apiAddress = "https://api.open-meteo.com/v1/forecast?timezone=Europe%2FBerlin&latitude=";
-    size_t userOptionsIndex = 0;
 
     double latitude = 0;
     double longitude = 0;
@@ -36,26 +38,22 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
         if(callAPI("http://ip-api.com/json/", &geolocationData)){
             nlohmann::json data = nlohmann::json::parse(geolocationData);
             latitude = data["lat"];
-            userOptionsLiteral[userOptionsIndex] = std::to_string(latitude);
-            userOptionsIndex = userOptionsIndex + 1;
+            coordinates.push_back(std::to_string(latitude));
 
             longitude = data["lon"];
-            userOptionsLiteral[userOptionsIndex] = std::to_string(longitude);
-            userOptionsIndex = userOptionsIndex + 1;
+            coordinates.push_back(std::to_string(longitude));
         }
     }
     else if(arguments[0][0] == '-' && arguments[0][1] == 'c'){
         std::string argument = arguments[0];
         latitude = std::stod(argument.substr(2, argument.find(',') - 2));
-        userOptionsLiteral[userOptionsIndex] = std::to_string(latitude);
-        userOptionsIndex = userOptionsIndex + 1;
+        coordinates.push_back(std::to_string(latitude));
 
         longitude = std::stod(argument.substr(argument.find(',') + 1, argument.length() - argument.find(',') - 1));
-        userOptionsLiteral[userOptionsIndex] = std::to_string(longitude);
-        userOptionsIndex = userOptionsIndex + 1;
+        coordinates.push_back(std::to_string(longitude));
     }
     else{
-        getUserCoordinates(&latitude, &longitude, userOptionsLiteral, &userOptionsIndex);
+        getUserCoordinates(&latitude, &longitude);
     }
 
     apiAddress = apiAddress + std::to_string(latitude) + "&longitude=" + std::to_string(longitude) + "&current=";
@@ -63,11 +61,11 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
     if(arguments[1] == "-ao" || arguments[0] == "-ao"){
         for (size_t i = 1; i < 6; i++)
         {
-            saveUserInput(i, userOptionsLiteral, userOptions, &userOptionsIndex, &apiAddress);
+            saveUserInput(i, &apiAddress);
         }
     }
     else{
-        getUserOptions(userOptionsLiteral, userOptions, &userOptionsIndex, &apiAddress);
+        getUserOptions(&apiAddress);
     }
 
     std::string weatherData = "";
@@ -77,7 +75,7 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
 
         nlohmann::json data = nlohmann::json::parse(weatherData);
         const auto& current = data["current"];
-        for (size_t i = 2; i < sizeof(userOptionsLiteral)/sizeof(std::string) && !userOptionsLiteral[i].empty(); ++i) {
+        for (size_t i = 0; i < userOptionsLiteral.size() && !userOptionsLiteral[i].empty(); ++i) {
             if (current.contains(userOptionsLiteral[i])) {
                 formattedWeatherData.push_back(userOptions[i] + current[userOptionsLiteral[i]].dump());
                 //std::cout << userOptions[i] << current[userOptionsLiteral[i]] << '\n';
@@ -88,6 +86,10 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
         }
     }
     
+    coordinates.clear();
+    userOptionsLiteral.clear();
+    userOptions.clear();
+
     return formattedWeatherData;
 }
 
@@ -107,45 +109,40 @@ double CallAPI::getValidatedCoordinate(const std::string& name, double min, doub
     }
 }
 
-void CallAPI::saveUserInput(int input, std::string userOptionsLiteral[], std::string userOptions[], size_t *userOptionsIndex, std::string *apiAddress){
+void CallAPI::saveUserInput(int input, std::string *apiAddress){
     switch (input)
     {
         case 1:
-            *apiAddress += ",temperature_2m";
-            userOptionsLiteral[*userOptionsIndex] = "temperature_2m";
-            userOptions[*userOptionsIndex] = "Temperature (Celsius): ";
-            *userOptionsIndex = *userOptionsIndex + 1;
+            *apiAddress += "," + weatherOptionsLiteral[0];
+            userOptionsLiteral.push_back(weatherOptionsLiteral[0]);
+            userOptions.push_back(weatherOptions[0] + ": ");
             break;
         case 2:
-            *apiAddress += ",apparent_temperature";
-            userOptionsLiteral[*userOptionsIndex] = "apparent_temperature";
-            userOptions[*userOptionsIndex] = "Apparent Temperature (Celsius): ";
-            *userOptionsIndex = *userOptionsIndex + 1;
+            *apiAddress += "," + weatherOptionsLiteral[1];
+            userOptionsLiteral.push_back(weatherOptionsLiteral[1]);
+            userOptions.push_back(weatherOptions[1] + ": ");
             break;
         case 3:
-            *apiAddress += ",relative_humidity_2m";
-            userOptionsLiteral[*userOptionsIndex] = "relative_humidity_2m";
-            userOptions[*userOptionsIndex] = "Relative Humidity (%): ";
-            *userOptionsIndex = *userOptionsIndex + 1;
+            *apiAddress += "," + weatherOptionsLiteral[2];
+            userOptionsLiteral.push_back(weatherOptionsLiteral[2]);
+            userOptions.push_back(weatherOptions[2] + ": ");
             break;
         case 4:
-            *apiAddress += ",wind_speed_10m";
-            userOptionsLiteral[*userOptionsIndex] = "wind_speed_10m";
-            userOptions[*userOptionsIndex] = "Wind Speed (km/h): ";
-            *userOptionsIndex = *userOptionsIndex + 1;
+            *apiAddress += "," + weatherOptionsLiteral[3];
+            userOptionsLiteral.push_back(weatherOptionsLiteral[3]);
+            userOptions.push_back(weatherOptions[3] + ": ");
             break;
         case 5:
-            *apiAddress += ",cloud_cover";
-            userOptionsLiteral[*userOptionsIndex] = "cloud_cover";
-            userOptions[*userOptionsIndex] = "Cloud Cover (%): ";
-            *userOptionsIndex = *userOptionsIndex + 1;
+            *apiAddress += "," + weatherOptionsLiteral[4];
+            userOptionsLiteral.push_back(weatherOptionsLiteral[4]);
+            userOptions.push_back(weatherOptions[4] + ": ");
             break;
         default:
             std::cout << "Please enter a number from 0-5" << "\n";
     }
 }
 
-void CallAPI::getUserOptions(std::string userOptionsLiteral[], std::string userOptions[], size_t *userOptionsIndex, std::string *apiAddress){
+void CallAPI::getUserOptions(std::string *apiAddress){
     int input = 0;
     std::set<int> chosenOptions = {};
     while(true){
@@ -176,19 +173,17 @@ void CallAPI::getUserOptions(std::string userOptionsLiteral[], std::string userO
             continue;
         }
 
-        saveUserInput(input, userOptionsLiteral, userOptions, userOptionsIndex, apiAddress);
+        saveUserInput(input, apiAddress);
     }
 
 }
 
-void CallAPI::getUserCoordinates(double *latitude, double *longitude, std::string userOptionsLiteral[], size_t *userOptionsIndex){
+void CallAPI::getUserCoordinates(double *latitude, double *longitude){
     *latitude = getValidatedCoordinate("Latitude", -90, 90);
-    userOptionsLiteral[*userOptionsIndex] = std::to_string(*latitude);
-    *userOptionsIndex = *userOptionsIndex + 1;
+    coordinates.push_back(std::to_string(*latitude));
 
     *longitude = getValidatedCoordinate("Longitude", -180, 180);
-    userOptionsLiteral[*userOptionsIndex] = std::to_string(*longitude);
-    *userOptionsIndex = *userOptionsIndex + 1;
+    coordinates.push_back(std::to_string(*longitude));
 }
 
 bool CallAPI::callAPI(std::string apiAddress, std::string *output){

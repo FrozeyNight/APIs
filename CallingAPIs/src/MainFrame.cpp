@@ -24,12 +24,18 @@ void MainFrame::CreateControls(){
     autoCoords = new wxCheckBox(panel, wxID_ANY, "Get Coordinates Automatically");
     autoCoords->SetValue(1);
     latText = new wxStaticText(panel, wxID_ANY, "Latitude: ");
+    latText->Disable();
     latInput = new wxTextCtrl(panel, wxID_ANY);
+    latInput->Disable();
     lonText = new wxStaticText(panel, wxID_ANY, "Longitude: ");
+    lonText->Disable();
     lonInput = new wxTextCtrl(panel, wxID_ANY);
+    lonInput->Disable();
     allOptions = new wxCheckBox(panel, wxID_ANY, "Display All Data");
     allOptions->SetValue(1);
     weatherOptions = new wxCheckListBox(panel, wxID_ANY);
+    weatherOptions->InsertItems(CallAPI::weatherOptions, 0);
+    weatherOptions->Disable();
     showDataButton = new wxButton(panel, wxID_ANY, "Show Data");
     output = new wxListBox(panel, wxID_ANY);
 }
@@ -82,6 +88,8 @@ void MainFrame::SetupSizers(){
 
 void MainFrame::BindEventHandlers(){
     showDataButton->Bind(wxEVT_BUTTON, &MainFrame::OnShowDataButtonClicked, this);
+    autoCoords->Bind(wxEVT_CHECKBOX, &MainFrame::OnAutoCoordsCheckBoxClicked, this);
+    allOptions->Bind(wxEVT_CHECKBOX, &MainFrame::OnAllOptionsCheckBoxClicked, this);
 }
 
 void MainFrame::OnShowDataButtonClicked(wxCommandEvent& evt){
@@ -90,5 +98,37 @@ void MainFrame::OnShowDataButtonClicked(wxCommandEvent& evt){
         char* argv[] = {"", "-gc", "-ao"};
         std::vector<std::string> weatherData = CallAPI::RunMyWeather(3, argv);
         output->InsertItems(weatherData, 0);
+    }
+    else if(!autoCoords->IsChecked() && !latInput->IsEmpty() && !lonInput->IsEmpty()){
+        std::string holder = ("-c" + latInput->GetValue() + "," + lonInput->GetValue()).ToStdString();
+        std::cout << holder;
+        char* coordinates = holder.data();
+        char* argv[] = {"", coordinates, "-ao"};
+        std::vector<std::string> weatherData = CallAPI::RunMyWeather(3, argv);
+        output->InsertItems(weatherData, 0);
+    }
+}
+
+void MainFrame::OnAutoCoordsCheckBoxClicked(wxCommandEvent& evt){
+    if(autoCoords->GetValue() == 0){
+        latText->Enable();
+        latInput->Enable();
+        lonText->Enable();
+        lonInput->Enable();
+    }
+    else{
+        latText->Disable();
+        latInput->Disable();
+        lonText->Disable();
+        lonInput->Disable();
+    }
+}
+
+void MainFrame::OnAllOptionsCheckBoxClicked(wxCommandEvent& evt){
+    if(allOptions->GetValue() == 0){
+        weatherOptions->Enable();
+    }
+    else{
+        weatherOptions->Disable();
     }
 }

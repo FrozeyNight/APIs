@@ -12,6 +12,8 @@ private:
     void BindEventHandlers();
 
     void OnShowDataButtonClicked(wxCommandEvent& evt);
+    void OnAutoCoordsCheckBoxClicked(wxCommandEvent& evt);
+    void OnAllOptionsCheckBoxClicked(wxCommandEvent& evt);
 
     wxPanel* panel;
     wxStaticText* headlineText;
