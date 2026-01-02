@@ -94,19 +94,42 @@ void MainFrame::BindEventHandlers(){
 
 void MainFrame::OnShowDataButtonClicked(wxCommandEvent& evt){
     output->Clear();
-    if(autoCoords->IsChecked() && allOptions->IsChecked()){
-        char* argv[] = {"", "-gc", "-ao"};
-        std::vector<std::string> weatherData = CallAPI::RunMyWeather(3, argv);
-        output->InsertItems(weatherData, 0);
+    std::string argument1Holder = "-gc";
+    std::string argument2Holder = "-ao";
+
+    if(!autoCoords->IsChecked()){
+        if(latInput->IsEmpty() || lonInput->IsEmpty()){
+            wxLogWarning("You must enter coordinates manually in the \"Latitude\" and \"Longitude\" input boxes if the \"Get Coordinates Automatically\" option is disabled.");
+            return;
+        }
+        argument1Holder = ("-c" + latInput->GetValue() + "," + lonInput->GetValue()).ToStdString();
     }
-    else if(!autoCoords->IsChecked() && !latInput->IsEmpty() && !lonInput->IsEmpty()){
-        std::string holder = ("-c" + latInput->GetValue() + "," + lonInput->GetValue()).ToStdString();
-        std::cout << holder;
-        char* coordinates = holder.data();
-        char* argv[] = {"", coordinates, "-ao"};
-        std::vector<std::string> weatherData = CallAPI::RunMyWeather(3, argv);
-        output->InsertItems(weatherData, 0);
+
+    if(!allOptions->IsChecked()){
+
+        argument2Holder = "-o";
+        
+        bool atLeastOneOptionChecked = false;
+        for (size_t i = 0; i < weatherOptions->GetCount(); i++)
+        {
+            if(weatherOptions->IsChecked(i)){
+                argument2Holder += std::to_string(i + 1) + ",";
+                atLeastOneOptionChecked = true;
+            }
+        }
+
+        if(!atLeastOneOptionChecked){
+            wxLogWarning("You must select at least 1 weather option to show data for if the \"Display All Data\" option is disabled.");
+            return;
+        }
+
     }
+
+    char* argv[] = {(char*)"", argument1Holder.data(), argument2Holder.data()};
+    int argc = 1 + !argument1Holder.empty() + !argument2Holder.empty();
+
+    std::vector<std::string> weatherData = CallAPI::RunMyWeather(argc, argv);
+    output->InsertItems(weatherData, 0);
 }
 
 void MainFrame::OnAutoCoordsCheckBoxClicked(wxCommandEvent& evt){

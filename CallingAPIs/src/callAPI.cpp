@@ -64,6 +64,26 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
             saveUserInput(i, &apiAddress);
         }
     }
+    else if(arguments[1][0] == '-' && arguments[1][1] == 'o'){
+        int optionIndex = 0;
+        int position = 1;
+        if(arguments[1][arguments[1].length() - 1] != ','){
+            arguments[1] = arguments[1] + ',';
+        }
+        for (size_t i = 2; i < arguments[1].length(); i++)
+        {
+            if(arguments[1][i] == ','){
+                saveUserInput(optionIndex, &apiAddress);
+                optionIndex = 0;
+                position = 1;
+                continue;
+            }
+
+            optionIndex += (arguments[1][i] - '0') * position;
+            position *= 10;
+        }
+        
+    }
     else{
         getUserOptions(&apiAddress);
     }
