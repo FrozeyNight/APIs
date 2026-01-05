@@ -36,7 +36,11 @@ file(GLOB CALLINGAPIS_SOURCES CONFIGURE_DEPENDS CallingAPIs/src/*.cpp)
 set(wxBUILD_SHARED OFF CACHE BOOL "" FORCE)
 set(wxBUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(wxBUILD_SAMPLES OFF CACHE BOOL "" FORCE)
-set(wxUSE_MANIFEST ON CACHE BOOL "" FORCE)
+
+if(WIN32)
+    set(wxUSE_MANIFEST ON CACHE BOOL "" FORCE)
+    set(wxUSE_RC_MANIFEST ON CACHE BOOL "" FORCE)
+endif()
 
 add_subdirectory(extern/wxWidgets EXCLUDE_FROM_ALL)
 add_subdirectory(extern/json EXCLUDE_FROM_ALL)
@@ -55,15 +59,11 @@ else()
     add_executable(myWeather ${CALLINGAPIS_SOURCES})
 endif()
 
-#[[
 if(WIN32)
-    add_custom_command(TARGET myWeather POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_CURRENT_BINARY_DIR}/extern/wxWidgets/lib/gcc_x64_dll
-        $<TARGET_FILE_DIR:myWeather>
+    target_sources(myWeather PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/CallingAPIs/src/app.rc
     )
 endif()
-]]#
 
 target_link_libraries(myWeather PRIVATE
     wx::core
