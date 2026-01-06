@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include "CallAPI.h"
+#include <wx/dialup.h>
 
 MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title){
     CreateControls();
@@ -129,6 +130,12 @@ void MainFrame::OnShowDataButtonClicked(wxCommandEvent& evt){
     int argc = 1 + !argument1Holder.empty() + !argument2Holder.empty();
 
     std::vector<std::string> weatherData = CallAPI::RunMyWeather(argc, argv);
+
+    if(CallAPI::isCurlOK == false){
+        wxLogError(weatherData[0]);
+        return;
+    }
+
     output->InsertItems(weatherData, 0);
 }
 

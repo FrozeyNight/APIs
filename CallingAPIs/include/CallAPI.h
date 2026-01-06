@@ -12,6 +12,8 @@ public:
     static std::vector<std::string> RunMyWeather(int argc, char* argv[]);
     static std::vector<std::string> weatherOptions;
     static std::vector<std::string> weatherOptionsLiteral;
+
+    static bool isCurlOK;
 private:
     static std::vector<std::string> userOptions;
     static std::vector<std::string> userOptionsLiteral;

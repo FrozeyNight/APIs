@@ -18,6 +18,7 @@ std::vector<std::string> CallAPI::userOptionsLiteral;
 std::vector<std::string> CallAPI::coordinates;
 std::vector<std::string> CallAPI::weatherOptions = {"Temperature (Celsius)", "Apparent Temperature (Celsius)", "Relative Humidity (%)", "Wind Speed (km/h)", "Cloud Cover (%)"};
 std::vector<std::string> CallAPI::weatherOptionsLiteral = {"temperature_2m", "apparent_temperature", "relative_humidity_2m", "wind_speed_10m", "cloud_cover"};
+bool CallAPI::isCurlOK = false;
 
 std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
 
@@ -42,6 +43,11 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
 
             longitude = data["lon"];
             coordinates.push_back(std::to_string(longitude));
+        }
+        else{
+            CallAPI::isCurlOK = false;
+            std::vector<std::string> errorMessage = {"Failed to fetch coordinates from the internet. Please ensure you have a stable internet connection"};
+            return errorMessage; 
         }
     }
     else if(arguments[0][0] == '-' && arguments[0][1] == 'c'){
@@ -105,11 +111,17 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
             }
         }
     }
+    else{
+        CallAPI::isCurlOK = false;
+        std::vector<std::string> errorMessage = {"Failed to fetch weather data from the internet. Please ensure you have a stable internet connection"};
+        return errorMessage;
+    }
     
     coordinates.clear();
     userOptionsLiteral.clear();
     userOptions.clear();
 
+    CallAPI::isCurlOK = true;
     return formattedWeatherData;
 }
 
