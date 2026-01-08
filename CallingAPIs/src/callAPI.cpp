@@ -29,85 +29,112 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
     double latitude = 0;
     double longitude = 0;
     std::string arguments[argc];
+    bool areCoordsSet = false;
+    bool areOptionsSet = false;
+    bool displayOutputInConsole = false;
 
     for(int i = 1; i < argc; i++){
         arguments[i - 1] = argv[i];
+        //std::cout << arguments[i - 1] << std::endl;
     }
 
-    if(arguments[0] == "-gc"){
-        std::string geolocationData;
-        if(callAPI("http://ip-api.com/json/", &geolocationData)){
-            nlohmann::json data = nlohmann::json::parse(geolocationData);
-            latitude = data["lat"];
+    for(std::string argument : arguments){
+        if(argument == "-gc"){
+            std::string geolocationData;
+            if(callAPI("http://ip-api.com/json/", &geolocationData)){
+                nlohmann::json data = nlohmann::json::parse(geolocationData);
+                latitude = data["lat"];
+                coordinates.push_back(std::to_string(latitude));
+
+                longitude = data["lon"];
+                coordinates.push_back(std::to_string(longitude));
+                areCoordsSet = true;
+            }
+            else{
+                CallAPI::isCurlOK = false;
+                std::vector<std::string> errorMessage = {"Failed to fetch coordinates from the internet. Please ensure you have a stable internet connection"};
+                return errorMessage; 
+            }
+        }
+        else if(argument[0] == '-' && argument[1] == 'c'){
+            latitude = std::stod(argument.substr(2, argument.find(',') - 2));
             coordinates.push_back(std::to_string(latitude));
 
-            longitude = data["lon"];
+            longitude = std::stod(argument.substr(argument.find(',') + 1, argument.length() - argument.find(',') - 1));
             coordinates.push_back(std::to_string(longitude));
+            areCoordsSet = true;
         }
-        else{
-            CallAPI::isCurlOK = false;
-            std::vector<std::string> errorMessage = {"Failed to fetch coordinates from the internet. Please ensure you have a stable internet connection"};
-            return errorMessage; 
+        else if(argument == "-ao"){
+            for (size_t i = 1; i < 6; i++)
+            {
+                saveUserInput(i, &apiAddress);
+            }
+            areOptionsSet = true;
         }
-    }
-    else if(arguments[0][0] == '-' && arguments[0][1] == 'c'){
-        std::string argument = arguments[0];
-        latitude = std::stod(argument.substr(2, argument.find(',') - 2));
-        coordinates.push_back(std::to_string(latitude));
+        else if(argument[0] == '-' && argument[1] == 'o'){
+            int optionIndex = 0;
+            int position = 1;
+            if(argument[argument.length() - 1] != ','){
+                argument = argument + ',';
+            }
+            for (size_t i = 2; i < argument.length(); i++)
+            {
+                if(argument[i] == ','){
+                    saveUserInput(optionIndex, &apiAddress);
+                    optionIndex = 0;
+                    position = 1;
+                    continue;
+                }
 
-        longitude = std::stod(argument.substr(argument.find(',') + 1, argument.length() - argument.find(',') - 1));
-        coordinates.push_back(std::to_string(longitude));
+                optionIndex += (argument[i] - '0') * position;
+                position *= 10;
+            }
+            
+            areOptionsSet = true;
+        }
+        else if(argument == "-s"){
+            displayOutputInConsole = true;
+        }
     }
-    else{
+
+    if(!areCoordsSet){
         getUserCoordinates(&latitude, &longitude);
     }
 
     apiAddress = apiAddress + std::to_string(latitude) + "&longitude=" + std::to_string(longitude) + "&current=";
 
-    if(arguments[1] == "-ao" || arguments[0] == "-ao"){
-        for (size_t i = 1; i < 6; i++)
-        {
-            saveUserInput(i, &apiAddress);
-        }
-    }
-    else if(arguments[1][0] == '-' && arguments[1][1] == 'o'){
-        int optionIndex = 0;
-        int position = 1;
-        if(arguments[1][arguments[1].length() - 1] != ','){
-            arguments[1] = arguments[1] + ',';
-        }
-        for (size_t i = 2; i < arguments[1].length(); i++)
-        {
-            if(arguments[1][i] == ','){
-                saveUserInput(optionIndex, &apiAddress);
-                optionIndex = 0;
-                position = 1;
-                continue;
-            }
-
-            optionIndex += (arguments[1][i] - '0') * position;
-            position *= 10;
-        }
-        
-    }
-    else{
+    if(!areOptionsSet){
         getUserOptions(&apiAddress);
     }
+
+    for(std::string userOptionLiteral : userOptionsLiteral){
+        apiAddress += "," + userOptionLiteral;
+    }
+
 
     std::string weatherData = "";
     std::vector<std::string> formattedWeatherData;
     if(callAPI(apiAddress, &weatherData)){
-        //std::cout << "The chosen data for " << userOptionsLiteral[0].substr(0, userOptionsLiteral[0].find('.') + 3) << ", " << userOptionsLiteral[1].substr(0, userOptionsLiteral[1].find('.') + 3) << ":\n";
-
+        if(displayOutputInConsole){
+            std::cout << "The chosen data for " << coordinates[0].substr(0, coordinates[0].find('.') + 3) << ", " << coordinates[1].substr(0, coordinates[1].find('.') + 3) << ":\n";
+        }
         nlohmann::json data = nlohmann::json::parse(weatherData);
         const auto& current = data["current"];
         for (size_t i = 0; i < userOptionsLiteral.size() && !userOptionsLiteral[i].empty(); ++i) {
             if (current.contains(userOptionsLiteral[i])) {
-                formattedWeatherData.push_back(userOptions[i] + current[userOptionsLiteral[i]].dump());
-                //std::cout << userOptions[i] << current[userOptionsLiteral[i]] << '\n';
+                if(displayOutputInConsole){
+                    std::cout << userOptions[i] << current[userOptionsLiteral[i]] << '\n';
+                }
+                else{
+                    formattedWeatherData.push_back(userOptions[i] + current[userOptionsLiteral[i]].dump());
+                }
             } else {
-                //std::cout << userOptions[i] << "Not available\n";
-                formattedWeatherData.push_back(userOptions[i] + "Not available");
+                if(displayOutputInConsole){
+                    std::cout << userOptions[i] << "Not available\n";
+                }
+                else{
+                    formattedWeatherData.push_back(userOptions[i] + "Not available");
+                }
             }
         }
     }
@@ -145,27 +172,22 @@ void CallAPI::saveUserInput(int input, std::string *apiAddress){
     switch (input)
     {
         case 1:
-            *apiAddress += "," + weatherOptionsLiteral[0];
             userOptionsLiteral.push_back(weatherOptionsLiteral[0]);
             userOptions.push_back(weatherOptions[0] + ": ");
             break;
         case 2:
-            *apiAddress += "," + weatherOptionsLiteral[1];
             userOptionsLiteral.push_back(weatherOptionsLiteral[1]);
             userOptions.push_back(weatherOptions[1] + ": ");
             break;
         case 3:
-            *apiAddress += "," + weatherOptionsLiteral[2];
             userOptionsLiteral.push_back(weatherOptionsLiteral[2]);
             userOptions.push_back(weatherOptions[2] + ": ");
             break;
         case 4:
-            *apiAddress += "," + weatherOptionsLiteral[3];
             userOptionsLiteral.push_back(weatherOptionsLiteral[3]);
             userOptions.push_back(weatherOptions[3] + ": ");
             break;
         case 5:
-            *apiAddress += "," + weatherOptionsLiteral[4];
             userOptionsLiteral.push_back(weatherOptionsLiteral[4]);
             userOptions.push_back(weatherOptions[4] + ": ");
             break;
