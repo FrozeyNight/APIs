@@ -5,10 +5,11 @@
 #include "CallAPI.h"
 #include <wx/dialup.h>
 
-MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title){
+MainFrame::MainFrame(const wxString& title, const wxArrayString& args) : wxFrame(nullptr, wxID_ANY, title){
     CreateControls();
     SetupSizers();
     BindEventHandlers();
+    HandleCmdArguments(args);
 }
 
 void MainFrame::CreateControls(){
@@ -93,6 +94,44 @@ void MainFrame::BindEventHandlers(){
     allOptions->Bind(wxEVT_CHECKBOX, &MainFrame::OnAllOptionsCheckBoxClicked, this);
 }
 
+void MainFrame::HandleCmdArguments(wxArrayString cmdParsedArguments){
+    for(wxString argument : cmdParsedArguments){
+        if(argument[0] == '-' && argument[1] == 'c'){
+            autoCoords->SetValue(0);
+            latInput->SetValue(argument.substr(2, argument.find(',') - 2));
+            lonInput->SetValue(argument.substr(argument.find(',') + 1, argument.length() - argument.find(',') - 1));
+            
+            latText->Enable();
+            latInput->Enable();
+            lonText->Enable();
+            lonInput->Enable();
+        }
+        else if(argument[0] == '-' && argument[1] == 'o'){
+            // this should probably be a function of CallAPI
+            allOptions->SetValue(0);
+            int optionIndex = 0;
+            int position = 1;
+            if(argument[argument.length() - 1] != ','){
+                argument = argument + ',';
+            }
+            for (size_t i = 2; i < argument.length(); i++)
+            {
+                if(argument[i] == ','){
+                    weatherOptions->Check(optionIndex - 1);
+                    optionIndex = 0;
+                    position = 1;
+                    continue;
+                }
+
+                optionIndex += (argument[i] - '0') * position;
+                position *= 10;
+            }
+
+            weatherOptions->Enable();
+        }
+    }
+}
+
 void MainFrame::OnShowDataButtonClicked(wxCommandEvent& evt){
     output->Clear();
     std::string argument1Holder = "-gc";
@@ -136,7 +175,9 @@ void MainFrame::OnShowDataButtonClicked(wxCommandEvent& evt){
         return;
     }
 
-    output->InsertItems(weatherData, 0);
+    if(!weatherData.empty()){
+        output->InsertItems(weatherData, 0);
+    }
 }
 
 void MainFrame::OnAutoCoordsCheckBoxClicked(wxCommandEvent& evt){

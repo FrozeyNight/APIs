@@ -5,11 +5,12 @@
 
 class MainFrame : public wxFrame{
 public:
-    MainFrame(const wxString& title);
+    MainFrame(const wxString& title, const wxArrayString& args);
 private:
     void CreateControls();
     void SetupSizers();
     void BindEventHandlers();
+    void HandleCmdArguments(wxArrayString cmdParsedArguments);
 
     void OnShowDataButtonClicked(wxCommandEvent& evt);
     void OnAutoCoordsCheckBoxClicked(wxCommandEvent& evt);

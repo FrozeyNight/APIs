@@ -36,7 +36,7 @@ bool App::OnInit(){
         return false;
     }
     else{
-        MainFrame* mainFrame = new MainFrame("myWeather App");
+        MainFrame* mainFrame = new MainFrame("myWeather App", arguments);
         mainFrame->SetClientSize(800, 600);
         mainFrame->Center();
         mainFrame->Show();
