@@ -14,6 +14,10 @@ bool App::OnInit(){
     // This allows the app to read command line arguments
     wxApp::OnInit();
 
+    if(shouldExit){
+        return false;
+    }
+
     if(silent_mode){
 
         size_t argc = arguments.size() + 1;
@@ -54,7 +58,6 @@ void App::OnInitCmdLine(wxCmdLineParser& parser)
     parser.AddSwitch("ao", "alloptions", "Choose all weather options for the program to display (the user no longer has to input them during the program runtime)");
     parser.AddOption("c", "coords", "Manually specify coordinates the program will use to get weather data. Example: \"-c 42,16\", \"--coords 66.21,53.112\"");
     parser.AddOption("o", "options", "Manually specify weather options the program will display data for. Example: \"-o 2,4,1\", \"--options 1\"");
-    parser.Parse(true);
 }
 
 bool App::OnCmdLineParsed(wxCmdLineParser& parser)
@@ -66,6 +69,7 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
     
     if (parser.Found("version")){
         std::cout << "MyWeather 0.8.1" << std::endl;
+        shouldExit = true;
     }
     if(parser.Found("silent")){
         silent_mode = true;
@@ -86,4 +90,11 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
     
 
     return true;
+}
+
+bool App::OnCmdLineHelp(wxCmdLineParser& parser)
+{
+    parser.Usage();
+    shouldExit = true;
+    return false;
 }

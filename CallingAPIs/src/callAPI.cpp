@@ -35,7 +35,6 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
 
     for(int i = 1; i < argc; i++){
         arguments[i - 1] = argv[i];
-        //std::cout << arguments[i - 1] << std::endl;
     }
 
     for(std::string argument : arguments){
@@ -72,24 +71,12 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
             areOptionsSet = true;
         }
         else if(argument[0] == '-' && argument[1] == 'o'){
-            int optionIndex = 0;
-            int position = 1;
-            if(argument[argument.length() - 1] != ','){
-                argument = argument + ',';
-            }
-            for (size_t i = 2; i < argument.length(); i++)
-            {
-                if(argument[i] == ','){
-                    saveUserInput(optionIndex, &apiAddress);
-                    optionIndex = 0;
-                    position = 1;
-                    continue;
-                }
-
-                optionIndex += (argument[i] - '0') * position;
-                position *= 10;
-            }
+            std::vector<int> options = ParseOptions(argument);
             
+            for(int option : options){
+                saveUserInput(option, &apiAddress);
+            }
+
             areOptionsSet = true;
         }
         else if(argument == "-s"){
@@ -274,4 +261,28 @@ bool CallAPI::callAPI(std::string apiAddress, std::string *output){
     }
 
     return false;
+}
+
+std::vector<int> CallAPI::ParseOptions(std::string argument){
+    std::vector<int> options;
+
+    int optionIndex = 0;
+    int position = 1;
+    if(argument[argument.length() - 1] != ','){
+        argument = argument + ',';
+    }
+    for (size_t i = 2; i < argument.length(); i++)
+    {
+        if(argument[i] == ','){
+            options.push_back(optionIndex);
+            optionIndex = 0;
+            position = 1;
+            continue;
+        }
+
+        optionIndex += (argument[i] - '0') * position;
+        position *= 10;
+    }
+
+    return options;
 }

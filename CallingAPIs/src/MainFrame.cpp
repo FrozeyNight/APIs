@@ -107,26 +107,14 @@ void MainFrame::HandleCmdArguments(wxArrayString cmdParsedArguments){
             lonInput->Enable();
         }
         else if(argument[0] == '-' && argument[1] == 'o'){
-            // this should probably be a function of CallAPI
+            std::string argumentHolder = argument.ToStdString();
+            std::vector<int> options = CallAPI::ParseOptions(argumentHolder);
+
+            for(int option : options){
+                weatherOptions->Check(option - 1);
+            }
+
             allOptions->SetValue(0);
-            int optionIndex = 0;
-            int position = 1;
-            if(argument[argument.length() - 1] != ','){
-                argument = argument + ',';
-            }
-            for (size_t i = 2; i < argument.length(); i++)
-            {
-                if(argument[i] == ','){
-                    weatherOptions->Check(optionIndex - 1);
-                    optionIndex = 0;
-                    position = 1;
-                    continue;
-                }
-
-                optionIndex += (argument[i] - '0') * position;
-                position *= 10;
-            }
-
             weatherOptions->Enable();
         }
     }

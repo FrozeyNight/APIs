@@ -5,11 +5,13 @@
 
 class App : public wxApp{
 public:
-    bool OnInit();
-    virtual void OnInitCmdLine(wxCmdLineParser& parser);
-    virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
+    bool OnInit();	
 
 private:
     bool silent_mode;
+    bool shouldExit = false;
     wxArrayString arguments;
+    virtual void OnInitCmdLine(wxCmdLineParser& parser);
+    virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
+    virtual bool OnCmdLineHelp(wxCmdLineParser& parser);
 };
