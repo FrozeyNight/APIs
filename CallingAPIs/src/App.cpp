@@ -5,6 +5,8 @@
 #include <wx/cmdline.h>
 #include "CallAPI.h"
 #include <vector>
+#include "sample.xpm"
+
 
 wxIMPLEMENT_APP(App);
 
@@ -43,6 +45,9 @@ bool App::OnInit(){
         MainFrame* mainFrame = new MainFrame("myWeather App", arguments);
         mainFrame->SetClientSize(800, 600);
         mainFrame->Center();
+        wxInitAllImageHandlers();
+        wxIcon icon(sample_xpm);
+        mainFrame->SetIcon(icon);
         mainFrame->Show();
     }
     return true;
