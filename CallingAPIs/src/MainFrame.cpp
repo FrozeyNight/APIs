@@ -25,14 +25,18 @@ void MainFrame::CreateControls(){
 
     autoCoords = new wxCheckBox(panel, wxID_ANY, "Get Coordinates Automatically");
     autoCoords->SetValue(1);
+
     latText = new wxStaticText(panel, wxID_ANY, "Latitude: ");
     latText->Disable();
-    latInput = new wxTextCtrl(panel, wxID_ANY);
+    wxTextValidator onlyAllowNumbers = wxTextValidator(wxFILTER_NUMERIC);
+    latInput = new wxTextCtrl(panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, 0, onlyAllowNumbers);
     latInput->Disable();
+
     lonText = new wxStaticText(panel, wxID_ANY, "Longitude: ");
     lonText->Disable();
-    lonInput = new wxTextCtrl(panel, wxID_ANY);
+    lonInput = new wxTextCtrl(panel, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, 0, onlyAllowNumbers);
     lonInput->Disable();
+
     allOptions = new wxCheckBox(panel, wxID_ANY, "Display All Data");
     allOptions->SetValue(1);
     weatherOptions = new wxCheckListBox(panel, wxID_ANY);

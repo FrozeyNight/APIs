@@ -6,6 +6,7 @@
 #include <nlohmann/json.hpp>
 #include <vector>
 #include "CallAPI.h"
+#include <exception>
 
 size_t CallAPI::WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output){
     size_t totalSize = size * nmemb;
@@ -19,8 +20,9 @@ std::vector<std::string> CallAPI::coordinates;
 std::vector<std::string> CallAPI::weatherOptions = {"Temperature (Celsius)", "Apparent Temperature (Celsius)", "Relative Humidity (%)", "Wind Speed (km/h)", "Cloud Cover (%)"};
 std::vector<std::string> CallAPI::weatherOptionsLiteral = {"temperature_2m", "apparent_temperature", "relative_humidity_2m", "wind_speed_10m", "cloud_cover"};
 bool CallAPI::isCurlOK = false;
+bool CallAPI::isArgumentsOK = false;
 
-std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
+std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[], bool doShowConsoleErrorMessages){
 
     std::string apiAddress = "";
 
@@ -52,16 +54,33 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
             else{
                 CallAPI::isCurlOK = false;
                 std::vector<std::string> errorMessage = {"Failed to fetch coordinates from the internet. Please ensure you have a stable internet connection"};
+                
+                if(doShowConsoleErrorMessages){
+                    std::cout << "Failed to fetch coordinates from the internet. Please ensure you have a stable internet connection\n";
+                }
+                
                 return errorMessage; 
             }
         }
         else if(argument[0] == '-' && argument[1] == 'c'){
-            latitude = std::stod(argument.substr(2, argument.find(',') - 2));
-            coordinates.push_back(std::to_string(latitude));
+            try{
+                latitude = std::stod(argument.substr(2, argument.find(',') - 2));
+                coordinates.push_back(std::to_string(latitude));
 
-            longitude = std::stod(argument.substr(argument.find(',') + 1, argument.length() - argument.find(',') - 1));
-            coordinates.push_back(std::to_string(longitude));
-            areCoordsSet = true;
+                longitude = std::stod(argument.substr(argument.find(',') + 1, argument.length() - argument.find(',') - 1));
+                coordinates.push_back(std::to_string(longitude));
+                areCoordsSet = true;
+            }
+            catch(std::exception& e){
+                CallAPI::isArgumentsOK = false;
+                std::vector<std::string> errorMessage = {"Failed to parse coordinates. Please ensure you follow the correct format \"-c10.2,40.42\" or \"--coords10.2,40.42\""};
+                
+                if(doShowConsoleErrorMessages){
+                    std::cout << "Failed to parse coordinates. Please ensure you follow the correct format \"-c10.2,40.42\" or \"--coords10.2,40.42\"\n";
+                }
+
+                return errorMessage; 
+            }
         }
         else if(argument == "-ao"){
             for (size_t i = 1; i < 6; i++)
@@ -128,6 +147,11 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
     else{
         CallAPI::isCurlOK = false;
         std::vector<std::string> errorMessage = {"Failed to fetch weather data from the internet. Please ensure you have a stable internet connection"};
+        
+        if(doShowConsoleErrorMessages){
+            std::cout << "Failed to fetch coordinates from the internet. Please ensure you have a stable internet connection\n";
+        }
+        
         return errorMessage;
     }
     
@@ -136,6 +160,7 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[]){
     userOptions.clear();
 
     CallAPI::isCurlOK = true;
+    CallAPI::isArgumentsOK = true;
     return formattedWeatherData;
 }
 

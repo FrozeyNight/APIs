@@ -35,7 +35,7 @@ bool App::OnInit(){
             argv[i + 1] = storage.back().data();     
         }
 
-        CallAPI::RunMyWeather(argc, argv);
+        CallAPI::RunMyWeather(argc, argv, true);
 
         delete [] argv;
 

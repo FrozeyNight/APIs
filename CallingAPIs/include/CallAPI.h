@@ -9,12 +9,13 @@
 
 class CallAPI{
 public:
-    static std::vector<std::string> RunMyWeather(int argc, char* argv[]);
+    static std::vector<std::string> RunMyWeather(int argc, char* argv[], bool doShowConsoleErrorMessages = false);
     static std::vector<int> ParseOptions(std::string argument);
     static std::vector<std::string> weatherOptions;
     static std::vector<std::string> weatherOptionsLiteral;
 
     static bool isCurlOK;
+    static bool isArgumentsOK;
 private:
     static std::vector<std::string> userOptions;
     static std::vector<std::string> userOptionsLiteral;
