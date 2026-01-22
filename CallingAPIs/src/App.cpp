@@ -17,7 +17,22 @@ bool App::OnInit(){
     wxApp::OnInit();
 
     if(shouldExit){
-        return false;
+        wxWindow* test = wxApp::GetTopWindow();
+        test->Close();
+
+        /* Current Windows issues to fix:
+        1. -h help ends the task, but in cmd the > doesn't appear so it doesn't look like the program finished
+            in powershell the help does display correctly as well, but the user types in over the displayed
+            text which results in some strange error when trying to run commands like that after using -h
+            in MinGW64 it doesn't display anything
+        2. -v does not show any information in cmd/ps, but works in MinGW64
+        3. -s in cmd/ps does not display anything, but does run in the background and there doesn't seem to be a way
+            to close it outside of using Task Manager
+            in MinGW64 it shows the "Latitude: " prompt and waits for user input, but after that is provided
+            it never stops waiting for more user input
+        */
+
+        //return false;
     }
 
     if(silent_mode){
@@ -39,7 +54,10 @@ bool App::OnInit(){
 
         delete [] argv;
 
-        return false;
+        wxWindow* test = wxApp::GetTopWindow();
+        test->Close();
+
+        //return false;
     }
     else{
         MainFrame* mainFrame = new MainFrame("myWeather App", arguments);
