@@ -6,6 +6,10 @@
 #include "CallAPI.h"
 #include <vector>
 #include "sample.xpm"
+#ifdef _WIN32
+    #include <iostream>
+    #include <windows.h>
+#endif
 
 
 wxIMPLEMENT_APP(App);
@@ -36,6 +40,8 @@ bool App::OnInit(){
     }
 
     if(silent_mode){
+
+        AttatchAppToConsole();
 
         size_t argc = arguments.size() + 1;
         char** argv = new char*[argc];
@@ -71,6 +77,22 @@ bool App::OnInit(){
     return true;
 }
 
+void App::AttatchAppToConsole(){
+    #ifdef _WIN32
+        if (AttachConsole(ATTACH_PARENT_PROCESS))
+        {
+            FILE* fp;
+            freopen_s(&fp, "CONOUT$", "w", stdout);
+            freopen_s(&fp, "CONOUT$", "w", stderr);
+            freopen_s(&fp, "CONIN$", "r", stdin);
+            
+            std::cout.clear();
+            std::cerr.clear();
+            std::cin.clear();
+        }
+    #endif
+}
+
 void App::OnInitCmdLine(wxCmdLineParser& parser)
 {
     wxApp::OnInitCmdLine(parser);
@@ -91,6 +113,7 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
     wxString optionValueHolder = "";
     
     if (parser.Found("version")){
+        AttatchAppToConsole();
         std::cout << "MyWeather 0.8.1" << std::endl;
         shouldExit = true;
     }

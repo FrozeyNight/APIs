@@ -11,6 +11,9 @@ private:
     bool silent_mode;
     bool shouldExit = false;
     wxArrayString arguments;
+    
+    void AttatchAppToConsole();
+
     virtual void OnInitCmdLine(wxCmdLineParser& parser);
     virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
     virtual bool OnCmdLineHelp(wxCmdLineParser& parser);
