@@ -13,6 +13,7 @@ private:
     wxArrayString arguments;
     
     void AttatchAppToConsole();
+    void CreateNewConsole();
 
     virtual void OnInitCmdLine(wxCmdLineParser& parser);
     virtual bool OnCmdLineParsed(wxCmdLineParser& parser);

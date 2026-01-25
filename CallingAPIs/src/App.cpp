@@ -21,8 +21,10 @@ bool App::OnInit(){
     wxApp::OnInit();
 
     if(shouldExit){
-        wxWindow* test = wxApp::GetTopWindow();
-        test->Close();
+        #ifdef _WIN32
+            wxWindow* test = wxApp::GetTopWindow();
+            test->Close();
+        #endif
 
         /* Current Windows issues to fix:
         1. -h help ends the task, but in cmd the > doesn't appear so it doesn't look like the program finished
@@ -36,12 +38,15 @@ bool App::OnInit(){
             it never stops waiting for more user input
         */
 
-        //return false;
+        #ifdef __linux__
+            return false;
+        #endif
     }
 
     if(silent_mode){
-
-        AttatchAppToConsole();
+        #ifdef _WIN32
+            CreateNewConsole();
+        #endif
 
         size_t argc = arguments.size() + 1;
         char** argv = new char*[argc];
@@ -60,10 +65,12 @@ bool App::OnInit(){
 
         delete [] argv;
 
-        wxWindow* test = wxApp::GetTopWindow();
-        test->Close();
+        //wxWindow* test = wxApp::GetTopWindow();
+        //test->Close();
 
-        //return false;
+        #ifdef __linux__
+            return false;
+        #endif
     }
     else{
         MainFrame* mainFrame = new MainFrame("myWeather App", arguments);
@@ -93,6 +100,26 @@ void App::AttatchAppToConsole(){
     #endif
 }
 
+void App::CreateNewConsole(){
+    #ifdef _WIN32
+        if (!AllocConsole()) {
+            return;
+        }
+
+        FILE* fp;
+        freopen_s(&fp, "CONOUT$", "w", stdout);
+        freopen_s(&fp, "CONOUT$", "w", stderr);
+        freopen_s(&fp, "CONIN$", "r", stdin);
+
+        std::cout.clear();
+        std::clog.clear();
+        std::cerr.clear();
+        std::cin.clear();
+        
+        SetConsoleTitle(L"myWeather");
+    #endif
+}
+
 void App::OnInitCmdLine(wxCmdLineParser& parser)
 {
     wxApp::OnInitCmdLine(parser);
@@ -113,7 +140,9 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
     wxString optionValueHolder = "";
     
     if (parser.Found("version")){
-        AttatchAppToConsole();
+        #ifdef _WIN32
+            AttatchAppToConsole();
+        #endif
         std::cout << "MyWeather 0.8.1" << std::endl;
         shouldExit = true;
     }
