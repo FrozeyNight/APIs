@@ -65,11 +65,25 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[], bool doSh
         else if(argument[0] == '-' && argument[1] == 'c'){
             try{
                 latitude = std::stod(argument.substr(2, argument.find(',') - 2));
-                coordinates.push_back(std::to_string(latitude));
-
                 longitude = std::stod(argument.substr(argument.find(',') + 1, argument.length() - argument.find(',') - 1));
-                coordinates.push_back(std::to_string(longitude));
-                areCoordsSet = true;
+                
+                bool incorrectLatitude = latitude > 90 || latitude < -90;
+                bool incorrectLongitude = longitude > 180 || longitude < -180;
+
+                if(doShowConsoleErrorMessages){
+                    if(incorrectLatitude){
+                        std::cout << "Latitude must be a number between -90 and 90" << std::endl;
+                    }
+                    if(incorrectLongitude){
+                        std::cout << "Longitude must be a number between -180 and 180" << std::endl;
+                    }
+                }
+
+                if(incorrectLatitude == false && incorrectLongitude == false){
+                    coordinates.push_back(std::to_string(latitude));
+                    coordinates.push_back(std::to_string(longitude));
+                    areCoordsSet = true;
+                }
             }
             catch(std::exception& e){
                 CallAPI::isArgumentsOK = false;
@@ -90,11 +104,13 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[], bool doSh
             areOptionsSet = true;
         }
         else if(argument[0] == '-' && argument[1] == 'o'){
-            std::vector<int> options = ParseOptions(argument);
-            
-            for(int option : options){
-                saveUserInput(option, &apiAddress);
+            std::vector<int> reversedOptions = ParseOptions(argument);
+
+            for (int i = reversedOptions.size() - 1; i > -1; i--)
+            {
+                saveUserInput(reversedOptions[i], &apiAddress);
             }
+            
 
             areOptionsSet = true;
         }
@@ -204,7 +220,7 @@ void CallAPI::saveUserInput(int input, std::string *apiAddress){
             userOptions.push_back(weatherOptions[4] + ": ");
             break;
         default:
-            std::cout << "Please enter a number from 0-5" << "\n";
+            std::cout << "\"" << input << "\" is not a valid option. Please only enter numbers from 0 to " << weatherOptions.size() << std::endl;
     }
 }
 
@@ -293,10 +309,11 @@ std::vector<int> CallAPI::ParseOptions(std::string argument){
 
     int optionIndex = 0;
     int position = 1;
-    if(argument[argument.length() - 1] != ','){
-        argument = argument + ',';
+    int argumentLength = argument.length();
+    if(argument[argumentLength - 1] == ','){
+        argumentLength -= 1;
     }
-    for (size_t i = 2; i < argument.length(); i++)
+    for (size_t i = argumentLength - 1; i > 1; i--)
     {
         if(argument[i] == ','){
             options.push_back(optionIndex);
@@ -308,6 +325,7 @@ std::vector<int> CallAPI::ParseOptions(std::string argument){
         optionIndex += (argument[i] - '0') * position;
         position *= 10;
     }
+    options.push_back(optionIndex);
 
     return options;
 }

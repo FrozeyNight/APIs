@@ -12,7 +12,7 @@ private:
     bool shouldExit = false;
     wxArrayString arguments;
     
-    void AttatchAppToConsole();
+    void AttachAppToConsole();
     void CreateNewConsole();
 
     virtual void OnInitCmdLine(wxCmdLineParser& parser);
