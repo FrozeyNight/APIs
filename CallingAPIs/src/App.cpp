@@ -9,12 +9,19 @@
 #ifdef _WIN32
     #include <iostream>
     #include <windows.h>
+    #include <wx/msgout.h>
 #endif
 
 
 wxIMPLEMENT_APP(App);
 
 bool App::OnInit(){
+
+    #if defined(_WIN32) && defined(RUNNING_AS_CONSOLE)
+        // Tell wxWidgets to print "Message" outputs (like -h) to the console (stderr) instead of popping up a MessageBox.
+        delete wxMessageOutput::Set(new wxMessageOutputStderr);
+        delete wxLog::SetActiveTarget(new wxLogStderr);
+    #endif
 
     silent_mode = false;
     // This allows the app to read command line arguments
@@ -32,7 +39,7 @@ bool App::OnInit(){
     }
 
     if(silent_mode){
-        #ifdef _WIN32
+        #if defined(_WIN32) && !defined(RUNNING_AS_CONSOLE)
             CreateNewConsole();
         #endif
 
@@ -53,7 +60,7 @@ bool App::OnInit(){
 
         delete [] argv;
 
-        #ifdef __linux__
+        #if defined(__linux__) || defined(RUNNING_AS_CONSOLE)
             return false;
         #endif
     }
@@ -113,8 +120,13 @@ void App::OnInitCmdLine(wxCmdLineParser& parser)
     parser.AddSwitch("s", "silent", "Makes the application work in the console only, no window/GUI will be shown", 0);
     parser.AddSwitch("gc", "getcoords", "Automatically fetch coordinates using the internet");
     parser.AddSwitch("ao", "alloptions", "Choose all weather options for the program to display (the user no longer has to input them during the program runtime)");
-    parser.AddOption("c", "coords", "Manually specify coordinates the program will use to get weather data. Example: \"-c 42,16\", \"--coords 66.21,53.112\"");
-    parser.AddOption("o", "options", "Manually specify weather options the program will display data for. Example: \"-o 2,4,1\", \"--options 1\"");
+    #ifdef __linux__
+        parser.AddOption("c", "coords", "Manually specify coordinates the program will use to get weather data. Example: \"-c 42,16\", \"--coords 66.21,53.112\"");
+        parser.AddOption("o", "options", "Manually specify weather options the program will display data for. Example: \"-o 2,4,1\", \"--options 1\"");
+    #else
+        parser.AddOption("c", "coords", "Manually specify coordinates the program will use to get weather data. Example: \" -c \"42,16\" \", \" --coords \"66.21,53.112\" \"");
+        parser.AddOption("o", "options", "Manually specify weather options the program will display data for. Example: \" -o \"2,4,1\" \", \"--options \"1\" \"");
+    #endif
 }
 
 bool App::OnCmdLineParsed(wxCmdLineParser& parser)
@@ -128,7 +140,7 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
         #ifdef _WIN32
             AttachAppToConsole();
         #endif
-        std::cout << "MyWeather 0.8.1" << std::endl;
+        std::cout << "MyWeather 0.9.2" << std::endl;
         shouldExit = true;
     }
     if(parser.Found("silent")){

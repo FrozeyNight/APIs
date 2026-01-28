@@ -165,7 +165,7 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[], bool doSh
         std::vector<std::string> errorMessage = {"Failed to fetch weather data from the internet. Please ensure you have a stable internet connection"};
         
         if(doShowConsoleErrorMessages){
-            std::cout << "Failed to fetch coordinates from the internet. Please ensure you have a stable internet connection\n";
+            std::cout << "Failed to fetch weather data from the internet. Please ensure you have a stable internet connection\n";
         }
         
         return errorMessage;

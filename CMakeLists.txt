@@ -79,4 +79,35 @@ target_include_directories(myWeather PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/CallingAPIs/include
 )
 
+# Adding a .com version of the executable for better Windows console integration
+if(WIN32)
+    add_executable(myWeatherConsole ${CALLINGAPIS_SOURCES})
+    set_target_properties(myWeatherConsole PROPERTIES 
+        OUTPUT_NAME "myWeather" 
+        SUFFIX ".com"
+    )
+    if(MSVC)
+    target_link_options(myWeatherConsole PRIVATE "/ENTRY:WinMainCRTStartup")
+    endif()
+
+    target_sources(myWeatherConsole PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/CallingAPIs/src/app.rc
+    )
+
+    target_link_libraries(myWeatherConsole PRIVATE
+        wx::core
+        wx::base
+        nlohmann_json::nlohmann_json
+        CURL::libcurl
+    )
+
+    target_include_directories(myWeatherConsole PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/extern/wxWidgets/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/extern/curl/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/extern/json/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/CallingAPIs/include
+    )
+
+    target_compile_definitions(myWeatherConsole PRIVATE RUNNING_AS_CONSOLE)
+endif()
 #install(TARGETS ${PROJECT_NAME} DESTINATION bin)
