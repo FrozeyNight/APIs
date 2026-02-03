@@ -78,6 +78,22 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[], bool doSh
                         std::cout << "Longitude must be a number between -180 and 180" << std::endl;
                     }
                 }
+                else{
+                    std::vector<std::string> errorMessage = {""};
+                    bool error = incorrectLatitude || incorrectLongitude;
+                    if(incorrectLatitude){
+                        CallAPI::isArgumentsOK = false;
+                        errorMessage[0] = "Latitude must be a number between -90 and 90\n";
+                    }
+                    if(incorrectLongitude){
+                        CallAPI::isArgumentsOK = false;
+                        errorMessage[0] += "Longitude must be a number between -180 and 180";
+                    }
+
+                    if(error){
+                        return errorMessage;
+                    }
+                }
 
                 if(incorrectLatitude == false && incorrectLongitude == false){
                     coordinates.push_back(std::to_string(latitude));
@@ -285,6 +301,8 @@ bool CallAPI::callAPI(std::string apiAddress, std::string *output){
 
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+        curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5L);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
 
         response = curl_easy_perform(curl);
         curl_slist_free_all(headers);
@@ -295,7 +313,12 @@ bool CallAPI::callAPI(std::string apiAddress, std::string *output){
             return true;
         }
         else{
-            std::cout << "curl_easy_perform() failed: " << curl_easy_strerror(response) << "\n";
+            if(response = CURLE_OPERATION_TIMEDOUT){
+                std::cout << "Request timed out: " << curl_easy_strerror(response) << "\n";
+            }
+            else{
+                std::cout << "curl_easy_perform() failed: " << curl_easy_strerror(response) << "\n";
+            }
             return false;
         }
 
