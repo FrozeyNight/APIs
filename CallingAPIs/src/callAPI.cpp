@@ -21,6 +21,9 @@ std::vector<std::string> CallAPI::weatherOptions = {"Temperature (Celsius)", "Ap
 std::vector<std::string> CallAPI::weatherOptionsLiteral = {"temperature_2m", "apparent_temperature", "relative_humidity_2m", "wind_speed_10m", "cloud_cover"};
 bool CallAPI::isCurlOK = false;
 bool CallAPI::isArgumentsOK = false;
+std::string curlTimeoutErrorCode = "2";
+std::string curlGeneralErrorCode = "1";
+int APICallRetryLimit = 5;
 
 std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[], bool doShowConsoleErrorMessages){
 
@@ -53,12 +56,20 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[], bool doSh
             }
             else{
                 CallAPI::isCurlOK = false;
-                std::vector<std::string> errorMessage = {"Failed to fetch coordinates from the internet. Please ensure you have a stable internet connection"};
                 
-                if(doShowConsoleErrorMessages){
-                    std::cout << "Failed to fetch coordinates from the internet. Please ensure you have a stable internet connection\n";
+                std::vector<std::string> errorMessage;
+                if(geolocationData == curlTimeoutErrorCode){
+                    errorMessage[0] = "The Coordinate fetching API responds, but does not return any data. Please try again later.";
+                }
+                else{
+                    errorMessage[0] = "Failed to fetch coordinates from the internet. Please ensure you have a stable internet connection";
                 }
                 
+                if(doShowConsoleErrorMessages){
+                    std::cout << errorMessage[0] << std::endl;
+                }
+                
+                ClearData();
                 return errorMessage; 
             }
         }
@@ -91,6 +102,7 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[], bool doSh
                     }
 
                     if(error){
+                        ClearData();
                         return errorMessage;
                     }
                 }
@@ -109,6 +121,7 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[], bool doSh
                     std::cout << "Failed to parse coordinates. Please ensure you follow the correct format \"-c10.2,40.42\" or \"--coords10.2,40.42\"\n";
                 }
 
+                ClearData();
                 return errorMessage; 
             }
         }
@@ -178,18 +191,24 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[], bool doSh
     }
     else{
         CallAPI::isCurlOK = false;
-        std::vector<std::string> errorMessage = {"Failed to fetch weather data from the internet. Please ensure you have a stable internet connection"};
-        
-        if(doShowConsoleErrorMessages){
-            std::cout << "Failed to fetch weather data from the internet. Please ensure you have a stable internet connection\n";
+
+        std::vector<std::string> errorMessage;
+        if(weatherData == curlTimeoutErrorCode){
+            errorMessage[0] = "The WeatherData DataBase responds, but does not return any data. Please try again later.";
+        }
+        else{
+            errorMessage[0] = "Failed to fetch weather data from the internet. Please ensure you have a stable internet connection";
         }
         
+        if(doShowConsoleErrorMessages){
+            std::cout << errorMessage[0] << std::endl;
+        }
+        
+        ClearData();
         return errorMessage;
     }
     
-    coordinates.clear();
-    userOptionsLiteral.clear();
-    userOptions.clear();
+    ClearData();
 
     CallAPI::isCurlOK = true;
     CallAPI::isArgumentsOK = true;
@@ -284,7 +303,7 @@ void CallAPI::getUserCoordinates(double *latitude, double *longitude){
     coordinates.push_back(std::to_string(*longitude));
 }
 
-bool CallAPI::callAPI(std::string apiAddress, std::string *output){
+bool CallAPI::callAPI(std::string apiAddress, std::string *output, int retryCount){
     CURL* curl;
     CURLcode response;
     std::string readBuffer;
@@ -313,11 +332,18 @@ bool CallAPI::callAPI(std::string apiAddress, std::string *output){
             return true;
         }
         else{
-            if(response = CURLE_OPERATION_TIMEDOUT){
-                std::cout << "Request timed out: " << curl_easy_strerror(response) << "\n";
+            if(response == CURLE_OPERATION_TIMEDOUT){
+                *output = curlTimeoutErrorCode;
+
+                if(retryCount < APICallRetryLimit){
+                    return callAPI(apiAddress, output, retryCount + 1);
+                }
+                // for testing
+                //std::cout << "Request timed out: " << curl_easy_strerror(response) << "\n";
             }
             else{
-                std::cout << "curl_easy_perform() failed: " << curl_easy_strerror(response) << "\n";
+                //std::cout << "curl_easy_perform() failed: " << curl_easy_strerror(response) << "\n";
+                *output = curlGeneralErrorCode;
             }
             return false;
         }
@@ -351,4 +377,10 @@ std::vector<int> CallAPI::ParseOptions(std::string argument){
     options.push_back(optionIndex);
 
     return options;
+}
+
+void CallAPI::ClearData(){
+    coordinates.clear();
+    userOptionsLiteral.clear();
+    userOptions.clear();
 }

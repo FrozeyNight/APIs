@@ -25,5 +25,6 @@ private:
     static void saveUserInput(int input, std::string *apiAddress);
     static void getUserOptions(std::string *apiAddress);
     static void getUserCoordinates(double *latitude, double *longitude);
-    static bool callAPI(std::string apiAddress, std::string *output);
+    static bool callAPI(std::string apiAddress, std::string *output, int retryCount = 0);
+    static void ClearData();
 };
