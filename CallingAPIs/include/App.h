@@ -5,7 +5,8 @@
 
 class App : public wxApp{
 public:
-    bool OnInit();	
+    virtual bool OnInit() override;
+    virtual int OnRun() override;
 
 private:
     bool silent_mode;

@@ -33,9 +33,7 @@ bool App::OnInit(){
             test->Close();
         #endif
 
-        #ifdef __linux__
-            return false;
-        #endif
+        return true;
     }
 
     if(silent_mode){
@@ -59,10 +57,14 @@ bool App::OnInit(){
         CallAPI::RunMyWeather(argc, argv, true);
 
         delete [] argv;
+        shouldExit = true;
+        return true;
 
+        /*
         #if defined(__linux__) || defined(RUNNING_AS_CONSOLE)
             return false;
         #endif
+        */
     }
     else{
         MainFrame* mainFrame = new MainFrame("myWeather App", arguments);
@@ -169,4 +171,12 @@ bool App::OnCmdLineHelp(wxCmdLineParser& parser)
     parser.Usage();
     shouldExit = true;
     return false;
+}
+
+int App::OnRun(){
+    if(shouldExit){
+        return 0;
+    }
+
+    return wxApp::OnRun();
 }

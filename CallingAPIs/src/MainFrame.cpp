@@ -134,6 +134,15 @@ void MainFrame::OnShowDataButtonClicked(wxCommandEvent& evt){
             wxLogWarning("You must enter coordinates manually in the \"Latitude\" and \"Longitude\" input boxes if the \"Get Coordinates Automatically\" option is disabled.");
             return;
         }
+
+        wxString holder = latInput->GetValue();
+        holder.Replace(",", ".");
+        latInput->SetValue(holder);
+        
+        holder = lonInput->GetValue();
+        holder.Replace(",", ".");
+        lonInput->SetValue(holder);
+
         argument1Holder = ("-c" + latInput->GetValue() + "," + lonInput->GetValue()).ToStdString();
     }
 
