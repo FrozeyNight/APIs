@@ -125,6 +125,7 @@ void MainFrame::HandleCmdArguments(wxArrayString cmdParsedArguments){
 }
 
 void MainFrame::OnShowDataButtonClicked(wxCommandEvent& evt){
+    showDataButton->Disable();
     output->Clear();
     std::string argument1Holder = "-gc";
     std::string argument2Holder = "-ao";
@@ -136,11 +137,11 @@ void MainFrame::OnShowDataButtonClicked(wxCommandEvent& evt){
         }
 
         wxString holder = latInput->GetValue();
-        holder.Replace(",", ".");
+        holder.Replace(",", ".", true);
         latInput->SetValue(holder);
         
         holder = lonInput->GetValue();
-        holder.Replace(",", ".");
+        holder.Replace(",", ".", true);
         lonInput->SetValue(holder);
 
         argument1Holder = ("-c" + latInput->GetValue() + "," + lonInput->GetValue()).ToStdString();
@@ -169,7 +170,11 @@ void MainFrame::OnShowDataButtonClicked(wxCommandEvent& evt){
     char* argv[] = {(char*)"", argument1Holder.data(), argument2Holder.data()};
     int argc = 1 + !argument1Holder.empty() + !argument2Holder.empty();
 
+    output->Insert("Loading...", 0);
+    wxTheApp->Yield();
     std::vector<std::string> weatherData = CallAPI::RunMyWeather(argc, argv);
+
+    showDataButton->Enable();
 
     if(CallAPI::isCurlOK == false){
         wxLogError(weatherData[0]);
@@ -177,6 +182,7 @@ void MainFrame::OnShowDataButtonClicked(wxCommandEvent& evt){
     }
 
     if(!weatherData.empty()){
+        output->Clear();
         output->InsertItems(weatherData, 0);
     }
 }
