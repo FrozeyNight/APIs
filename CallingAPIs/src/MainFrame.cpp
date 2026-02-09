@@ -4,6 +4,7 @@
 #include <string>
 #include "CallAPI.h"
 #include <wx/dialup.h>
+#include <thread>
 
 MainFrame::MainFrame(const wxString& title, const wxArrayString& args) : wxFrame(nullptr, wxID_ANY, title){
     CreateControls();
@@ -167,24 +168,34 @@ void MainFrame::OnShowDataButtonClicked(wxCommandEvent& evt){
 
     }
 
-    char* argv[] = {(char*)"", argument1Holder.data(), argument2Holder.data()};
-    int argc = 1 + !argument1Holder.empty() + !argument2Holder.empty();
-
     output->Insert("Loading...", 0);
-    wxTheApp->Yield();
-    std::vector<std::string> weatherData = CallAPI::RunMyWeather(argc, argv);
 
-    showDataButton->Enable();
+    const auto FetchWeatherDataInBackgroundThread = [this, argument1Holder, argument2Holder]() mutable {
 
-    if(CallAPI::isCurlOK == false){
-        wxLogError(weatherData[0]);
-        return;
-    }
+        char* argv[] = {(char*)"", argument1Holder.data(), argument2Holder.data()};
+        int argc = 1 + !argument1Holder.empty() + !argument2Holder.empty();
 
-    if(!weatherData.empty()){
-        output->Clear();
-        output->InsertItems(weatherData, 0);
-    }
+        std::vector<std::string> weatherData = CallAPI::RunMyWeather(argc, argv);
+        // technically if the user perfectly closes the app in this specific moment, the program would crash, since
+        // the "this" would point to a dead memory. In practice the time window to do this is so small (most likely a few miliseconds)
+        // that the odds of an end user actually doing that are insanely low.
+        CallAfter([this, weatherData](){
+            if(CallAPI::isCurlOK == false){
+                wxLogError(weatherData[0]);
+                return;
+            }
+
+            if(!weatherData.empty()){
+                output->Clear();
+                output->InsertItems(weatherData, 0);
+            }
+
+            showDataButton->Enable();
+        });
+    };
+    
+    std::thread BackgroundThread{FetchWeatherDataInBackgroundThread};
+    BackgroundThread.detach();
 }
 
 void MainFrame::OnAutoCoordsCheckBoxClicked(wxCommandEvent& evt){
