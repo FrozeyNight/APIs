@@ -2,6 +2,7 @@
 #include <wx/wx.h>
 #include <string>
 #include <vector>
+#include <thread>
 
 class MainFrame : public wxFrame{
 public:
@@ -15,6 +16,7 @@ private:
     void OnShowDataButtonClicked(wxCommandEvent& evt);
     void OnAutoCoordsCheckBoxClicked(wxCommandEvent& evt);
     void OnAllOptionsCheckBoxClicked(wxCommandEvent& evt);
+    void OnClose(wxCloseEvent& evt);
 
     wxPanel* panel;
     wxStaticText* headlineText;
@@ -27,4 +29,7 @@ private:
     wxCheckListBox* weatherOptions;
     wxButton* showDataButton;
     wxListBox* output;
+
+    std::atomic<bool> processing{false};
+    std::atomic<bool> quitRequested{false};
 };

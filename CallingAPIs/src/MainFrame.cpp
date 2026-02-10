@@ -134,6 +134,7 @@ void MainFrame::OnShowDataButtonClicked(wxCommandEvent& evt){
     if(!autoCoords->IsChecked()){
         if(latInput->IsEmpty() || lonInput->IsEmpty()){
             wxLogWarning("You must enter coordinates manually in the \"Latitude\" and \"Longitude\" input boxes if the \"Get Coordinates Automatically\" option is disabled.");
+            showDataButton->Enable();
             return;
         }
 
@@ -163,6 +164,7 @@ void MainFrame::OnShowDataButtonClicked(wxCommandEvent& evt){
 
         if(!atLeastOneOptionChecked){
             wxLogWarning("You must select at least 1 weather option to show data for if the \"Display All Data\" option is disabled.");
+            showDataButton->Enable();
             return;
         }
 
@@ -176,23 +178,30 @@ void MainFrame::OnShowDataButtonClicked(wxCommandEvent& evt){
         int argc = 1 + !argument1Holder.empty() + !argument2Holder.empty();
 
         std::vector<std::string> weatherData = CallAPI::RunMyWeather(argc, argv);
-        // technically if the user perfectly closes the app in this specific moment, the program would crash, since
-        // the "this" would point to a dead memory. In practice the time window to do this is so small (most likely a few miliseconds)
-        // that the odds of an end user actually doing that are insanely low.
+        
+        processing = true;
+        
         CallAfter([this, weatherData](){
+            output->Clear();
             if(CallAPI::isCurlOK == false){
                 wxLogError(weatherData[0]);
+                showDataButton->Enable();
                 return;
             }
 
             if(!weatherData.empty()){
-                output->Clear();
                 output->InsertItems(weatherData, 0);
             }
 
             showDataButton->Enable();
         });
+
+        processing = false;
     };
+    
+    if(quitRequested){
+        this->Destroy();
+    }
     
     std::thread BackgroundThread{FetchWeatherDataInBackgroundThread};
     BackgroundThread.detach();
@@ -219,5 +228,16 @@ void MainFrame::OnAllOptionsCheckBoxClicked(wxCommandEvent& evt){
     }
     else{
         weatherOptions->Disable();
+    }
+}
+
+void MainFrame::OnClose(wxCloseEvent &evt){
+    if(processing){
+        evt.Veto();
+        
+        quitRequested = true;
+    }
+    else{
+        this->Destroy();
     }
 }
