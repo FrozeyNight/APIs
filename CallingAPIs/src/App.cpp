@@ -28,11 +28,6 @@ bool App::OnInit(){
     wxApp::OnInit();
 
     if(shouldExit){
-        #ifdef _WIN32
-            wxWindow* test = wxApp::GetTopWindow();
-            test->Close();
-        #endif
-
         return true;
     }
 
@@ -59,12 +54,6 @@ bool App::OnInit(){
         delete [] argv;
         shouldExit = true;
         return true;
-
-        /*
-        #if defined(__linux__) || defined(RUNNING_AS_CONSOLE)
-            return false;
-        #endif
-        */
     }
     else{
         MainFrame* mainFrame = new MainFrame("myWeather App", arguments);
@@ -142,7 +131,7 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
         #ifdef _WIN32
             AttachAppToConsole();
         #endif
-        std::cout << "MyWeather 0.9.2" << std::endl;
+        std::cout << "MyWeather 0.9.5" << std::endl;
         shouldExit = true;
     }
     if(parser.Found("silent")){
