@@ -5,11 +5,26 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Common build flags for curl
+# This prevents CMake from finding libraries in C:/msys64/mingw64/lib
+# and forcing Curl to use them.
+set(CMAKE_DISABLE_FIND_PACKAGE_LibSSH2 ON)
+set(CMAKE_DISABLE_FIND_PACKAGE_libssh2 ON)
+set(CMAKE_DISABLE_FIND_PACKAGE_OpenSSL ON)
+set(CMAKE_DISABLE_FIND_PACKAGE_ZLIB ON)
+set(CMAKE_DISABLE_FIND_PACKAGE_NGHTTP2 ON) # Blocks HTTP/2
+set(CMAKE_DISABLE_FIND_PACKAGE_nghttp2 ON)
+set(CMAKE_DISABLE_FIND_PACKAGE_LibIDN2 ON) # Blocks IDN (u8_strlen errors)
+set(CMAKE_DISABLE_FIND_PACKAGE_Brotli ON)
+set(CMAKE_DISABLE_FIND_PACKAGE_Zstd ON)
+
+# Prevent Curl from using pkg-config to accidentally find system libraries
+set(CURL_USE_PKGCONFIG OFF CACHE BOOL "" FORCE)
+
 set(BUILD_CURL_EXE OFF CACHE INTERNAL "")
 set(BUILD_TESTING OFF CACHE INTERNAL "")
 set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")
-# Disable unused curl features
+
+# Force disable features to prevent linker errors
 set(CURL_USE_LIBPSL OFF CACHE BOOL "" FORCE)
 set(CURL_DISABLE_LDAP ON CACHE BOOL "" FORCE)
 set(CURL_DISABLE_LDAPS ON CACHE BOOL "" FORCE)
@@ -21,56 +36,42 @@ set(CURL_DISABLE_POP3 ON CACHE BOOL "" FORCE)
 set(CURL_DISABLE_IMAP ON CACHE BOOL "" FORCE)
 set(CURL_DISABLE_SMB ON CACHE BOOL "" FORCE)
 set(CURL_DISABLE_SMTP ON CACHE BOOL "" FORCE)
+set(CURL_DISABLE_GOPHER ON CACHE BOOL "" FORCE)
+set(CURL_DISABLE_MQTT ON CACHE BOOL "" FORCE)
+
+# Disable the libraries causing errors
+set(CURL_DISABLE_SSH ON CACHE BOOL "No SSH" FORCE)
+set(CMAKE_USE_LIBSSH2 OFF CACHE BOOL "No LibSSH2" FORCE)
+set(USE_NGHTTP2 OFF CACHE BOOL "No HTTP/2" FORCE)
+set(USE_LIBIDN2 OFF CACHE BOOL "No IDN" FORCE)
+set(CURL_ZSTD OFF CACHE BOOL "No Zstd" FORCE)
+set(CURL_BROTLI OFF CACHE BOOL "No Brotli" FORCE)
 
 # Enable HTTPS depending on OS
 if(WIN32)
-  # Use Windows native SSL (no external DLLs)
-  set(CURL_USE_SCHANNEL ON CACHE BOOL "Use Windows SSL backend")
+  set(CURL_USE_SCHANNEL ON CACHE BOOL "Use Windows SSL" FORCE)
+  set(CURL_USE_OPENSSL OFF CACHE BOOL "No OpenSSL" FORCE)
 else()
-  # Use OpenSSL on Linux
   set(CURL_USE_OPENSSL ON CACHE BOOL "Use OpenSSL backend")
 endif()
 
-file(GLOB CALLINGAPIS_SOURCES CONFIGURE_DEPENDS CallingAPIs/src/*.cpp)
-
-set(wxBUILD_SHARED OFF CACHE BOOL "" FORCE)
-set(wxBUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(wxBUILD_SAMPLES OFF CACHE BOOL "" FORCE)
-
-if(WIN32)
-    set(wxUSE_MANIFEST ON CACHE BOOL "" FORCE)
-    set(wxUSE_RC_MANIFEST ON CACHE BOOL "" FORCE)
+if(MINGW OR CYGWIN OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    # Ensure we don't depend on libgcc_s_seh-1.dll or libstdc++-6.dll
+    add_link_options(-static -static-libgcc -static-libstdc++)
 endif()
 
 add_subdirectory(extern/wxWidgets EXCLUDE_FROM_ALL)
 add_subdirectory(extern/json EXCLUDE_FROM_ALL)
 add_subdirectory(extern/curl EXCLUDE_FROM_ALL)
 
-# Where executables should be placed
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
-# Where libraries should be placed (if you ever build any)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+file(GLOB CALLINGAPIS_SOURCES CONFIGURE_DEPENDS CallingAPIs/src/*.cpp)
 
 if(WIN32)
     add_executable(myWeather WIN32 ${CALLINGAPIS_SOURCES})
+    target_sources(myWeather PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/CallingAPIs/src/app.rc)
 else()
     add_executable(myWeather ${CALLINGAPIS_SOURCES})
 endif()
-
-if(WIN32)
-    target_sources(myWeather PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/CallingAPIs/src/app.rc
-    )
-endif()
-
-target_link_libraries(myWeather PRIVATE
-    wx::core
-    wx::base
-    nlohmann_json::nlohmann_json
-    CURL::libcurl
-)
 
 target_include_directories(myWeather PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/extern/wxWidgets/include
@@ -79,35 +80,49 @@ target_include_directories(myWeather PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/CallingAPIs/include
 )
 
-# Adding a .com version of the executable for better Windows console integration
+target_link_libraries(myWeather PRIVATE
+    wx::core
+    wx::base
+    nlohmann_json::nlohmann_json
+    CURL::libcurl
+)
+
+if(WIN32)
+    target_link_libraries(myWeather PRIVATE
+        ws2_32   # Winsock
+        crypt32  # Crypto API (Needed for Schannel/Native SSL)
+        wldap32  # Often needed by Curl internally
+        advapi32
+        user32
+        bcrypt   # Sometimes needed by newer Curl/Windows Crypto
+    )
+endif()
+
+# Console version for Windows (.com file)
 if(WIN32)
     add_executable(myWeatherConsole ${CALLINGAPIS_SOURCES})
-    set_target_properties(myWeatherConsole PROPERTIES 
-        OUTPUT_NAME "myWeather" 
-        SUFFIX ".com"
-    )
+    set_target_properties(myWeatherConsole PROPERTIES OUTPUT_NAME "myWeather" SUFFIX ".com")
     if(MSVC)
-    target_link_options(myWeatherConsole PRIVATE "/ENTRY:WinMainCRTStartup")
+        target_link_options(myWeatherConsole PRIVATE "/ENTRY:WinMainCRTStartup")
     endif()
-
-    target_sources(myWeatherConsole PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/CallingAPIs/src/app.rc
-    )
-
-    target_link_libraries(myWeatherConsole PRIVATE
-        wx::core
-        wx::base
-        nlohmann_json::nlohmann_json
-        CURL::libcurl
-    )
-
+    target_sources(myWeatherConsole PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/CallingAPIs/src/app.rc)
     target_include_directories(myWeatherConsole PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/extern/wxWidgets/include
         ${CMAKE_CURRENT_SOURCE_DIR}/extern/curl/include
         ${CMAKE_CURRENT_SOURCE_DIR}/extern/json/include
         ${CMAKE_CURRENT_SOURCE_DIR}/CallingAPIs/include
     )
-
+    target_link_libraries(myWeatherConsole PRIVATE
+        wx::core
+        wx::base
+        nlohmann_json::nlohmann_json
+        CURL::libcurl
+        ws2_32
+        crypt32
+        wldap32
+        advapi32
+        user32
+        bcrypt
+    )
     target_compile_definitions(myWeatherConsole PRIVATE RUNNING_AS_CONSOLE)
 endif()
-#install(TARGETS ${PROJECT_NAME} DESTINATION bin)
