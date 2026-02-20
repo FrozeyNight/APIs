@@ -5,11 +5,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# This prevents CMake from finding libraries in C:/msys64/mingw64/lib
-# and forcing Curl to use them.
+# This prevents CMake from finding libraries in C:/msys64/mingw64/lib and forcing Curl to use them.
 set(CMAKE_DISABLE_FIND_PACKAGE_LibSSH2 ON)
 set(CMAKE_DISABLE_FIND_PACKAGE_libssh2 ON)
-set(CMAKE_DISABLE_FIND_PACKAGE_OpenSSL ON)
+if(WIN32)
+    set(CMAKE_DISABLE_FIND_PACKAGE_OpenSSL ON)
+endif()
 set(CMAKE_DISABLE_FIND_PACKAGE_ZLIB ON)
 set(CMAKE_DISABLE_FIND_PACKAGE_NGHTTP2 ON) # Blocks HTTP/2
 set(CMAKE_DISABLE_FIND_PACKAGE_nghttp2 ON)
@@ -49,15 +50,21 @@ set(CURL_BROTLI OFF CACHE BOOL "No Brotli" FORCE)
 
 # Enable HTTPS depending on OS
 if(WIN32)
-  set(CURL_USE_SCHANNEL ON CACHE BOOL "Use Windows SSL" FORCE)
-  set(CURL_USE_OPENSSL OFF CACHE BOOL "No OpenSSL" FORCE)
+    set(CURL_USE_SCHANNEL ON CACHE BOOL "Use Windows SSL" FORCE)
+    set(CURL_USE_OPENSSL OFF CACHE BOOL "No OpenSSL" FORCE)
 else()
-  set(CURL_USE_OPENSSL ON CACHE BOOL "Use OpenSSL backend")
+    set(CURL_USE_OPENSSL ON CACHE BOOL "Use OpenSSL backend")
 endif()
 
 if(MINGW OR CYGWIN OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    # Ensure we don't depend on libgcc_s_seh-1.dll or libstdc++-6.dll
-    add_link_options(-static -static-libgcc -static-libstdc++)
+    # Ensure the program doesn't depend on libgcc_s_seh-1.dll or libstdc++-6.dll
+    add_link_options(-static-libgcc -static-libstdc++)
+    if(WIN32)
+        add_link_options(-static)
+    else()
+        # Force wxWidgets to use its bundled PCRE2
+        set(wxUSE_REGEX builtin CACHE STRING "Use builtin PCRE2" FORCE)
+    endif()
 endif()
 
 add_subdirectory(extern/wxWidgets EXCLUDE_FROM_ALL)

@@ -131,7 +131,7 @@ bool App::OnCmdLineParsed(wxCmdLineParser& parser)
         #ifdef _WIN32
             AttachAppToConsole();
         #endif
-        std::cout << "MyWeather 0.9.5" << std::endl;
+        std::cout << "MyWeather 0.9.6" << std::endl;
         shouldExit = true;
     }
     if(parser.Found("silent")){
