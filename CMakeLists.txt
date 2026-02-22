@@ -132,4 +132,34 @@ if(WIN32)
         bcrypt
     )
     target_compile_definitions(myWeatherConsole PRIVATE RUNNING_AS_CONSOLE)
+else()
+    # Creating the AppImage
+    find_program(LINUXDEPLOY_CMD 
+        NAMES linuxdeploy-x86_64.AppImage linuxdeploy
+        PATHS ${CMAKE_SOURCE_DIR}
+    )
+
+    if(LINUXDEPLOY_CMD)
+        message(STATUS "linuxdeploy found: Enabling 'appimage' build target.")
+        
+        set(DESKTOP_FILE "${CMAKE_SOURCE_DIR}/myWeather.desktop")
+        set(ICON_FILE "${CMAKE_SOURCE_DIR}/myWeatherIcon.png")
+
+        add_custom_target(appimage
+            DEPENDS myWeather
+            
+            COMMAND ${LINUXDEPLOY_CMD} 
+                --appdir=${CMAKE_BINARY_DIR}/AppDir 
+                --executable=$<TARGET_FILE:myWeather> 
+                --desktop-file=${DESKTOP_FILE} 
+                --icon-file=${ICON_FILE} 
+                --plugin gtk
+                --output appimage
+                
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Bundling dynamic libraries and building the AppImage..."
+        )
+    else()
+        message(WARNING "linuxdeploy not found. The 'appimage' target will not be available.")
+    endif()
 endif()

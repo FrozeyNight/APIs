@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=myWeather
+# %F allows the file manager to pass file arguments to the app
+Exec=myWeather %F
+Icon=myWeatherIcon
+Terminal=false
+Categories=Utility;

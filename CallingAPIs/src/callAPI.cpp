@@ -45,6 +45,11 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[], bool doSh
     for(std::string argument : arguments){
         if(argument == "-gc"){
             std::string geolocationData;
+            
+            if(displayOutputInConsole){
+                std::cout << "Fetching Coordinates..." << std::endl;
+            }
+
             if(callAPI("http://ip-api.com/json/", &geolocationData)){
                 nlohmann::json data = nlohmann::json::parse(geolocationData);
                 latitude = data["lat"];
@@ -59,10 +64,10 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[], bool doSh
                 
                 std::vector<std::string> errorMessage;
                 if(geolocationData == curlTimeoutErrorCode){
-                    errorMessage[0] = "The Coordinate fetching API responds, but does not return any data. Please try again later.";
+                    errorMessage.push_back("The Coordinate fetching API responds, but does not return any data. Please try again later.");
                 }
                 else{
-                    errorMessage[0] = "Failed to fetch coordinates from the internet. Please ensure you have a stable internet connection";
+                    errorMessage.push_back("Failed to fetch coordinates from the internet. Please ensure you have a stable internet connection");
                 }
                 
                 if(doShowConsoleErrorMessages){
@@ -165,8 +170,14 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[], bool doSh
 
     std::string weatherData = "";
     std::vector<std::string> formattedWeatherData;
+
+    if(displayOutputInConsole){
+        std::cout << "Fetching WeatherData..." << std::endl;
+    }
+
     if(callAPI(apiAddress, &weatherData)){
         if(displayOutputInConsole){
+            std::cout << std::endl;
             std::cout << "The chosen data for " << coordinates[0].substr(0, coordinates[0].find('.') + 3) << ", " << coordinates[1].substr(0, coordinates[1].find('.') + 3) << ":\n";
         }
         nlohmann::json data = nlohmann::json::parse(weatherData);
@@ -191,15 +202,13 @@ std::vector<std::string> CallAPI::RunMyWeather(int argc, char* argv[], bool doSh
     }
     else{
         CallAPI::isCurlOK = false;
-
         std::vector<std::string> errorMessage;
         if(weatherData == curlTimeoutErrorCode){
-            errorMessage[0] = "The WeatherData DataBase responds, but does not return any data. Please try again later.";
+            errorMessage.push_back("The WeatherData DataBase responds, but does not return any data. Please try again later.");
         }
         else{
-            errorMessage[0] = "Failed to fetch weather data from the internet. Please ensure you have a stable internet connection";
+            errorMessage.push_back("Failed to fetch weather data from the internet. Please ensure you have a stable internet connection");
         }
-        
         if(doShowConsoleErrorMessages){
             std::cout << errorMessage[0] << std::endl;
         }

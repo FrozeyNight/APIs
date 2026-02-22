@@ -70,3 +70,6 @@ Makefile
 _deps/
 
 extern/*
+
+linuxdeploy-x86_64.AppImage
+linuxdeploy-plugin-gtk.sh
