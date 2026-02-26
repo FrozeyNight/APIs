@@ -5,9 +5,13 @@ It is a project I made to learn more about C++, making GUIs in said language, us
 
 This project was done with the help of:
 OttoBotCode's wxWidgets course: https://www.youtube.com/watch?v=BjQhp0eHmJw&list=PLFk1_lkqT8MbVOcwEppCPfjGOGhLvcf9G
+
 The wxWidgets documentation: https://docs.wxwidgets.org/3.2/
+
 Various forum posts on the wxWidgets Discussion Forum: https://forums.wxwidgets.org/
+
 The Cherno's videos about the C++ build process: https://www.youtube.com/@TheCherno/featured
+
 ChatGPT and Gemini (I did not use the chat bots to generate code for me, only to explain how some functions worked, explain warnings and build process errors, help choose the right libraries or functions and verify the compatibility and safety of the program)
 
 ## Platforms
@@ -51,3 +55,4 @@ Linux Mint:
 
 Windows 11:
 ![image alt](https://github.com/FrozeyNight/APIs/blob/d687b8581889faccfb0bfa9b80b5a19830630c1c/myWeatherWindowsPreview.png)
+
