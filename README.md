@@ -1,6 +1,3 @@
-![image alt](https://github.com/FrozeyNight/APIs/blob/d687b8581889faccfb0bfa9b80b5a19830630c1c/myWeatherAppImagePreview.png)
-![image alt](https://github.com/FrozeyNight/APIs/blob/d687b8581889faccfb0bfa9b80b5a19830630c1c/myWeatherWindowsPreview.png)
-
 ## About
 myWeather is a simple and lightweight cross-platform GUI and Console weather app, which displays the chosen weather data for specified coordinates.
 
@@ -47,3 +44,10 @@ This project uses the GNU General Public License version 3.
 
 	Note that this feature is only available on most Unix variants and does not work on Windows.
 
+## Screenshots
+Linux Mint:
+
+![image alt](https://github.com/FrozeyNight/APIs/blob/d687b8581889faccfb0bfa9b80b5a19830630c1c/myWeatherAppImagePreview.png)
+
+Windows 11:
+![image alt](https://github.com/FrozeyNight/APIs/blob/d687b8581889faccfb0bfa9b80b5a19830630c1c/myWeatherWindowsPreview.png)
